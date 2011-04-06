@@ -6,11 +6,13 @@
  */
 
 function commerce_ogone_process_feedback() {
-  // Check which request method was used
+  //module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha1');
+
   if (isset($_REQUEST['SHASIGN'])) {
     $feedback = array();
     $feedback = array_map('check_plain', $_REQUEST);
-    dsm($feedback);
+    //$feedback = array_change_key_case($feedback, CASE_UPPER);
+
     if (commerce_ogone_feedback_valid($feedback)) {
       drupal_set_message('valid feedback');
     }
@@ -29,7 +31,7 @@ function commerce_ogone_process_feedback() {
  * Validate the feedback with the SHA-1 signature
  */
 function commerce_ogone_feedback_valid($feedback) {
-  $sha1out = '6E974A568AF503CF410DF0FC50FE8D4166A827412343';
+  $sha1out = '!SHA1OUT!';
   $values = array(
     'ACCEPTANCE' => $feedback['ACCEPTANCE'],
     'AMOUNT' => $feedback['amount'],
@@ -53,7 +55,7 @@ function commerce_ogone_feedback_valid($feedback) {
   foreach ($values as $key => $val) {
     $incoming_sha1 .= $key . '=' . $val . $sha1out;
   }
-  if (sha1($incoming_sha1) == $feedback['SHASIGN']) {
+  if (strtoupper(sha1($incoming_sha1)) == $feedback['SHASIGN']) {
     return TRUE;
   }
   return FALSE;
