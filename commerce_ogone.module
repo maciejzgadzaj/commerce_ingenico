@@ -53,8 +53,8 @@ function commerce_ogone_settings_form($settings = NULL) {
   );
   $form['pspid'] = array(
     '#type' => 'textfield',
-    '#title' => t('PSP ID'),
-    '#description' => t('Your Ogone PSP ID login username'),
+    '#title' => t('PSPID'),
+    '#description' => t('Your Ogone PSPID login username'),
     '#default_value' => $settings['pspid'],
   );
   $form['currency'] = array(
