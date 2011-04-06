@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * @file
+ * Implements Ogone payment services for use in Drupal Commerce.
+ */
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_ogone_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['ogone'] = array(
+    'base' => 'commerce_ogone',
+    'title' => t('Ogone'),
+    'short_title' => t('Ogone'),
+    'display_title' => t('Ogone'),
+    'description' => t('Integrates Ogone payment system'),
+    'terminal' => FALSE,
+    'offsite' => TRUE,
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: settings form.
+ *
+ * Returns form elements for the payment methodÕs settings form included
+ * as part of the payment methodÕs enabling action in Rules
+ */
+function commerce_ogone_settings_form($settings = NULL) {
+  $form = array();
+
+  $settings = (array) $settings + array(
+    'account' => 'test',
+    'pspid' => '',
+    'currency' => variable_get('commerce_default_currency', 'USD'),
+    'language' => '',
+    'sha_in' => '',
+  );
+
+  // BASIC settings
+  $form['account'] = array(
+    '#type' => 'radios',
+    '#title' => t('Ogone account'),
+    '#options' => array(
+      'test' => ('Test account - for testing purposes only'),
+      'prod' => ('Production account - use for processing real transactions'),
+    ),
+    '#default_value' => $settings['account'],
+  );
+  $form['pspid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('PSP ID'),
+    '#description' => t('Your Ogone PSP ID login username'),
+    '#default_value' => $settings['pspid'],
+  );
+  $form['currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Currency code'),
+    '#description' => t('Transactions can only be processed in one of the listed currencies.'),
+    '#options' => commerce_ogone_currencies(),
+    '#default_value' => $settings['currency'],
+  );
+  $form['language'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Language code'),
+    '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
+    '#default_value' => $settings['language'],
+  );
+
+  // SECURITY settings
+  $form['sha_in'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SHA-IN Pass phrase'),
+    '#description' => t('The SHA-IN Pass phrase as entered in Ogone technical settings - "Data and origin verification" tab.'),
+    '#default_value' => $settings['sha_in'],
+  );
+
+  // @TODO: LAYOUT settings
+
+  return $form;
+}
+
+/**
+ * Payment method callback: redirect form
+ *
+ * returns form elements that should be submitted to the redirected
+ * payment service; because of the array merge that happens upon return,
+ * the serviceÕs URL that should receive the POST variables should be set in
+ * the #action property of the returned form array
+ */
+function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_method) {
+  // Return an error if the enabling action's settings haven't been configured.
+  if (empty($payment_method['settings']['pspid'])) {
+    drupal_set_message(t('Ogone is not configured for use. No Ogone PSPID has been specified.'), 'error');
+    return array();
+  }
+
+  // @TODO: figure out what these are for (copied from paypal_wps)
+  $settings = array(
+    // Return to the previous page when payment is canceled
+    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+
+    // Return to the payment redirect page for processing successful payments
+    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+
+    // Specify the current payment method instance ID in the notify_url
+    'payment_method' => $payment_method['instance_id'],
+  );
+
+  return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
+}
+
+/**
+ * Builds an Ogone payment form from an order object.
+ */
+function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settings) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Get financial info
+  $currency_code = $wrapper->commerce_order_total->currency_code->value();
+  $amount = $wrapper->commerce_order_total->amount->value();
+
+  // Load user profile
+  //$profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+
+  // Build the data array that will be translated into hidden form values.
+  // NOTE: keys should be uppercase for the SHA-1 security string
+  $data = array(
+    // General parameters
+    'PSPID' => $settings['pspid'],
+    'ORDERID' => $order->order_number,
+    'AMOUNT' => $amount,
+    'CURRENCY' => $currency_code,
+    'LANGUAGE' => $settings['language'],
+    //'CN' => '',
+    //'EMAIL' => '',
+
+    // Layout
+    'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
+
+  );
+  // NOTE: data should be ordered alphabetically for the SHA-1 string
+  ksort($data);
+
+
+  // Redirect to Ogone Test or Prod URL
+  $url = 'https://secure.ogone.com/ncol/' . $settings['account'] . '/orderstandard.asp';
+  $form['#action'] = $url;
+
+  $sha1_sig = '';
+  $sha1suffix = $settings['sha_in'];
+  foreach ($data as $name => $value) {
+    if (!empty($value)) {
+      $value = trim($value);
+      // Build the SHA-1 string from all filled in parameters
+      $sha1_sig .= $name . '=' . $value . $sha1suffix;
+      // Add the value as a hidden form element
+      $form[$name] = array('#type' => 'hidden', '#value' => $value);
+    }
+  }
+  // Add the calculated SHA-1 string
+  $form['SHASign'] = array('#type' => 'hidden', '#value' => sha1($sha1_sig));
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Proceed with payment'),
+  );
+
+  return $form;
+}
+
+/**
+ * Get a list of enabled currencies
+ *
+ * @TODO: figure out which currencies Ogone actually supports
+ */
+function commerce_ogone_currencies() {
+  // Build a currency options list from all enabled currencies.
+  $options = array();
+
+  foreach (commerce_currencies(TRUE) as $currency_code => $currency) {
+    $options[$currency_code] = t('@code - !name', array('@code' => $currency['code'], '@symbol' => $currency['symbol'], '!name' => $currency['name']));
+
+    if (!empty($currency['symbol'])) {
+      $options[$currency_code] .= ' - ' . check_plain($currency['symbol']);
+    }
+  }
+
+  return $options;
+}
