@@ -9,8 +9,7 @@
 /**
  * Validate the feedback with the SHA-1 signature
  */
-function commerce_ogone_feedback_valid_sha1($feedback) {
-  $sha1out = '!SHA1OUT!';
+function commerce_ogone_feedback_valid_sha1($feedback, $sha1out) {
   $incoming_sha1 = '';
   foreach (commerce_ogone_sha1_out_parameters() as $param) {
     if (isset($feedback[$param])) {
