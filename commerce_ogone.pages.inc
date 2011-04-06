@@ -13,9 +13,11 @@ function commerce_ogone_process_feedback() {
     $feedback = array_map('check_plain', $_REQUEST);
     $feedback = array_change_key_case($feedback, CASE_UPPER);
 
-    if ($sha1out = commerce_ogone_load_sha1out($feedback)) {
-      if (commerce_ogone_feedback_valid_sha1($feedback, $sha1out)) {
-        drupal_set_message('valid feedback');
+    if ($data = commerce_ogone_load_data($feedback)) {
+      if (isset($data['sha1out']) && !empty($data['sha1out'])) {
+        if (commerce_ogone_feedback_valid_sha1($feedback, $data['sha1out'])) {
+          drupal_set_message('valid feedback');
+        }
       }
     }
     else {
@@ -31,22 +33,25 @@ function commerce_ogone_process_feedback() {
 }
 
 /**
- *  Get the SHA-1-OUT pass phrase as defined in the payment method settings
+ *  Get the appropriate data for this order
  */
-function commerce_ogone_load_sha1out($feedback) {
+function commerce_ogone_load_data($feedback) {
+  $data = array();
   // Load the order
   $orderid = $feedback['ORDERID'];
   $order = commerce_order_load($orderid);
   if (isset($order) && is_object($order) && isset($order->data['payment_method'])) {
+    $data['order'] = $order;
     // Load the payment method
     $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
     if (isset($payment_method) && is_array($payment_method)) {
+      $data['payment_method'] = $payment_method;
       if (isset($payment_method['base']) && $payment_method['base'] == 'commerce_ogone') {
         if (isset($payment_method['settings']['sha_out'])) {
-          return $payment_method['settings']['sha_out'];
+          $data['sha1out'] = $payment_method['settings']['sha_out'];
         }
       }
-
     }
   }
+  return $data;
 }
