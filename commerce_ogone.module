@@ -107,7 +107,7 @@ function commerce_ogone_settings_form($settings = NULL) {
 
   // @TODO: LAYOUT settings
   $form['#submit'][] = 'commerce_ogone_settings_form_submit';
-  
+
   return $form;
 }
 
@@ -219,4 +219,170 @@ function commerce_ogone_currencies() {
   }
 
   return $options;
+}
+
+/**
+ * Get a payment status and message based on Ogone status ID
+ */
+function commerce_ogone_feedback_status($status) {
+  switch ($status) {
+    /** SUCCESS **/
+    case 4:  // Order stored
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Order stored');
+      break;
+    case 5:  // Authorized
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Authorized');
+      break;
+    case 8:  // Refund
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Refund');
+      break;
+    case 85:  // Refund processed by merchant
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Refund processed by merchant');
+      break;
+    case 9:  // Payment requested
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Payment requested');
+      break;
+    case 95:  // Payment processed by merchant
+      $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $msg = t('Payment processed by merchant');
+      break;
+
+    /** PENDING **/
+    case 40: // Stored waiting external result
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Stored waiting external result');
+      break;
+    case 41: // Waiting client payment
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Waiting client payment');
+      break;
+    case 50: // Authorized waiting external result
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Authorized waiting external result');
+      break;
+    case 51: // Authorization waiting
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Authorization waiting');
+      break;
+    case 55: // Stand-by
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Stand-by');
+      break;
+    case 56: // OK with scheduled payments
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('OK with scheduled payments');
+      break;
+    case 59: // Authoriz. to get manually
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Authoriz. to get manually');
+      break;
+    case 81: // Refund pending
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Refund pending');
+      break;
+    case 82: // Refund uncertain
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Refund uncertain');
+      break;
+    case 91: // Payment processing
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Payment processing');
+      break;
+    case 92: // Payment uncertain
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Payment uncertain');
+      break;
+    case 99: // Being processed
+      $st = COMMERCE_PAYMENT_STATUS_PENDING;
+      $msg = t('Being processed');
+      break;
+
+    /** FAILURE **/
+    case 0:  // Incomplete or invalid
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Incomplete or invalid');
+      break;
+    case 1:  // Cancelled by client
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Cancelled by client');
+      break;
+    case 2:  // Authorization refused
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Authorization refused');
+      break;
+    case 52: // Authorization not known
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Authorization not known');
+      break;
+    case 57: // Error in scheduled payments
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Error in scheduled payments');
+      break;
+    case 6:  // Authorized and cancelled
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Authorized and cancelled');
+      break;
+    case 61: // Author. deletion waiting
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Author. deletion waiting');
+      break;
+    case 62: // Author. deletion uncertain
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Author. deletion uncertain');
+      break;
+    case 63: // Author. deletion refused
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Author. deletion refused');
+      break;
+    case 64: // Authorized and cancelled
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Authorized and cancelled');
+      break;
+    case 7:  // Payment deleted
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment deleted');
+      break;
+    case 71:  // Payment deletion pending
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment deletion pending');
+      break;
+    case 72:  // Payment deletion uncertain
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment deletion uncertain');
+      break;
+    case 73:  // Payment deletion refused
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment deletion refused');
+      break;
+    case 74:  // Payment deleted
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment deleted');
+      break;
+    case 75:  // Deletion processed by merchant
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Deletion processed by merchant');
+      break;
+    case 83:  // Refund refused
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Refund refused');
+      break;
+    case 84:  // Payment declined by the acquirer
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment declined by the acquirer');
+      break;
+    case 93:  // Payment refused
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Payment refused');
+      break;
+    case 94:  // Refund declined by the acquirer
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Refund declined by the acquirer');
+      break;
+
+  }
 }

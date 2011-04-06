@@ -17,6 +17,7 @@ function commerce_ogone_process_feedback() {
       if (isset($data['sha1out']) && !empty($data['sha1out'])) {
         if (commerce_ogone_feedback_valid_sha1($feedback, $data['sha1out'])) {
           drupal_set_message('valid feedback');
+          commerce_ogone_update_status($feedback, $data);
         }
       }
     }
@@ -54,4 +55,25 @@ function commerce_ogone_load_data($feedback) {
     }
   }
   return $data;
+}
+
+/**
+ * Process the payment status
+ */
+function commerce_ogone_update_status($feedback, $data) {
+  $order = $data['order'];
+  $payment_method = $data['payment_method'];
+  $payment_status = commerce_ogone_feedback_status($feedback['STATUS']);
+
+  // Create a new payment transaction for the order.
+  $transaction = commerce_payment_transaction_new('commerce_ogone', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $feedback['PAYID'];
+  $transaction->remote_status = $feedback['STATUS'];
+  $transaction->amount = $feedback['AMOUNT'];
+  $transaction->currency_code = $feedback['CURRENCY'];
+  $transaction->status = $payment_status['code'];
+  $transaction->message = $payment_status['message'];
+  commerce_payment_transaction_save($transaction);
+  watchdog('commerce_ogone', 'Payment processed for order @order_number with ID @txn_id.', array('@txn_id' => $feedback['PAYID'], '@order_number' => $order->order_number), WATCHDOG_INFO);
 }
