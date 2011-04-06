@@ -25,6 +25,25 @@ function commerce_ogone_commerce_payment_method_info() {
 }
 
 /**
+ * Implementation of hook_menu().
+ */
+function commerce_ogone_menu() {
+  $items = array();
+
+  $items['commerce_ogone/feedback'] = array(
+    'title' => '',
+    'description' => '',
+    'page callback' => 'commerce_ogone_process_feedback',
+    'page arguments' => array(),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'commerce_ogone.pages.inc'
+  );
+
+  return $items;
+}
+
+/**
  * Payment method callback: settings form.
  *
  * Returns form elements for the payment methodÕs settings form included
@@ -39,6 +58,7 @@ function commerce_ogone_settings_form($settings = NULL) {
     'currency' => variable_get('commerce_default_currency', 'USD'),
     'language' => '',
     'sha_in' => '',
+    'sha_out' => '',
   );
 
   // BASIC settings
@@ -78,10 +98,22 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#description' => t('The SHA-IN Pass phrase as entered in Ogone technical settings - "Data and origin verification" tab.'),
     '#default_value' => $settings['sha_in'],
   );
+  $form['sha_out'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SHA-1-OUT Pass phrase'),
+    '#description' => t('The SHA-1-OUT Pass phrase as entered in Ogone technical settings - "Transaction feedback" tab.'),
+    '#default_value' => $settings['sha_out'],
+  );
 
   // @TODO: LAYOUT settings
-
+  $form['#submit'][] = 'commerce_ogone_settings_form_submit';
+  
   return $form;
+}
+
+function commerce_ogone_settings_form_submit($form, &$form_state) {
+  dsm(form);
+  dsm($form_state);
 }
 
 /**
@@ -99,17 +131,8 @@ function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_meth
     return array();
   }
 
-  // @TODO: figure out what these are for (copied from paypal_wps)
-  $settings = array(
-    // Return to the previous page when payment is canceled
-    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
-
-    // Return to the payment redirect page for processing successful payments
-    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
-
-    // Specify the current payment method instance ID in the notify_url
-    'payment_method' => $payment_method['instance_id'],
-  );
+  // Set feedback URLs
+  $settings['accepturl'] = $settings['declineurl'] = $settings['exceptionurl'] = $settings['cancelurl'] = url('commerce_ogone/feedback', array('absolute' => TRUE));
 
   return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
 }
@@ -142,6 +165,11 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     // Layout
     'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
 
+    // FEEDBACK URLS
+    'ACCEPTURL' => $settings['accepturl'],
+    'DECLINEURL' => $settings['declineurl'],
+    'EXCEPTIONURL' => $settings['exceptionurl'],
+    'CANCELURL' => $settings['cancelurl'],
   );
   // NOTE: data should be ordered alphabetically for the SHA-1 string
   ksort($data);
