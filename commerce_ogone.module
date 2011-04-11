@@ -7,6 +7,8 @@
 
 /**
  * Implements hook_commerce_payment_method_info().
+ *
+ * This hook will define the Ogone payment method
  */
 function commerce_ogone_commerce_payment_method_info() {
   $payment_methods = array();
@@ -96,9 +98,7 @@ function commerce_ogone_settings_form($settings = NULL) {
  * Payment method callback: redirect form
  *
  * returns form elements that should be submitted to the redirected
- * payment service; because of the array merge that happens upon return,
- * the serviceÕs URL that should receive the POST variables should be set in
- * the #action property of the returned form array
+ * payment service
  */
 function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_method) {
   // Return an error if the enabling action's settings haven't been configured.
@@ -123,17 +123,17 @@ function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_meth
 }
 
 /**
+ * Helper function for the redirect_form callback.
  * Builds an Ogone payment form from an order object.
  */
 function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settings) {
+  global $user;
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
 
   // Get financial info
   $currency_code = $wrapper->commerce_order_total->currency_code->value();
   $amount = $wrapper->commerce_order_total->amount->value();
-
-  // Load user profile
-  //$profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+  $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
 
   // Build the data array that will be translated into hidden form values.
   // NOTE: keys should be uppercase for the SHA-1 security string
@@ -144,8 +144,8 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'AMOUNT' => $amount,
     'CURRENCY' => $currency_code,
     'LANGUAGE' => $settings['language'],
-    //'CN' => '',
-    //'EMAIL' => '',
+    'CN' => $customer_name,
+    'EMAIL' => $order->mail,
 
     // Layout
     'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
@@ -164,6 +164,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   $url = 'https://secure.ogone.com/ncol/' . $settings['account'] . '/orderstandard.asp';
   $form['#action'] = $url;
 
+  // Generate SHA-1 security string & add hidden parameters to form
   $sha1_sig = '';
   $sha1suffix = $settings['sha_in'];
   foreach ($data as $name => $value) {
@@ -197,12 +198,14 @@ function commerce_ogone_redirect_form_validate($order, $payment_method) {
     $feedback = array_map('check_plain', $_REQUEST);
     $feedback = array_change_key_case($feedback, CASE_UPPER);
 
+    // Check if the received SHA-1 string is valid
     $sha1out = $payment_method['settings']['sha_out'];
     if (!commerce_ogone_feedback_valid_sha1($feedback, $sha1out)) {
       watchdog('commerce_ogone', t("SHA signature doesn't match"), array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
+    // Process the transaction based on the Ogone parameters received
     commerce_ogone_process_transaction($order, $payment_method, $feedback);
     return TRUE;
   }
