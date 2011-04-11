@@ -25,25 +25,6 @@ function commerce_ogone_commerce_payment_method_info() {
 }
 
 /**
- * Implementation of hook_menu().
- */
-function commerce_ogone_menu() {
-  $items = array();
-
-  $items['commerce_ogone/feedback'] = array(
-    'title' => '',
-    'description' => '',
-    'page callback' => 'commerce_ogone_process_feedback',
-    'page arguments' => array(),
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'commerce_ogone.pages.inc'
-  );
-
-  return $items;
-}
-
-/**
  * Payment method callback: settings form.
  *
  * Returns form elements for the payment methodÕs settings form included
@@ -111,11 +92,6 @@ function commerce_ogone_settings_form($settings = NULL) {
   return $form;
 }
 
-function commerce_ogone_settings_form_submit($form, &$form_state) {
-  dsm(form);
-  dsm($form_state);
-}
-
 /**
  * Payment method callback: redirect form
  *
@@ -132,7 +108,16 @@ function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_meth
   }
 
   // Set feedback URLs
-  $settings['accepturl'] = $settings['declineurl'] = $settings['exceptionurl'] = $settings['cancelurl'] = url('commerce_ogone/feedback', array('absolute' => TRUE));
+  $settings = array(
+    // Return to the previous page when payment is canceled
+    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+
+    // Return to the payment redirect page for processing successful payments
+    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+
+    // Specify the current payment method instance ID in the notify_url
+    'payment_method' => $payment_method['instance_id'],
+  );
 
   return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
 }
@@ -165,11 +150,11 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     // Layout
     'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
 
-    // FEEDBACK URLS
-    'ACCEPTURL' => $settings['accepturl'],
-    'DECLINEURL' => $settings['declineurl'],
-    'EXCEPTIONURL' => $settings['exceptionurl'],
-    'CANCELURL' => $settings['cancelurl'],
+    // Feedback URLs
+    'ACCEPTURL' => $settings['return'],
+    'DECLINEURL' => $settings['return'],
+    'EXCEPTIONURL' => $settings['return'],
+    'CANCELURL' => $settings['cancel_return'],
   );
   // NOTE: data should be ordered alphabetically for the SHA-1 string
   ksort($data);
@@ -202,6 +187,59 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
 }
 
 /**
+ * Implements hook_redirect_form_validate.
+ */
+function commerce_ogone_redirect_form_validate($order, $payment_method) {
+  module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha1');
+  if (isset($_REQUEST['SHASIGN'])) {
+    // prepare $_REQUEST values that are being sent by Ogone for processing
+    $feedback = array();
+    $feedback = array_map('check_plain', $_REQUEST);
+    $feedback = array_change_key_case($feedback, CASE_UPPER);
+
+    $sha1out = $payment_method['settings']['sha_out'];
+    if (!commerce_ogone_feedback_valid_sha1($feedback, $sha1out)) {
+      watchdog('commerce_ogone', t("SHA signature doesn't match"), array(), WATCHDOG_ERROR);
+      return FALSE;
+    }
+
+    commerce_ogone_process_transaction($order, $payment_method, $feedback);
+    return TRUE;
+  }
+  else {
+    watchdog('commerce_ogone', t('No valid SHASIGN found'), array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+}
+
+/**
+ * Process the payment transaction with the info received from Ogone
+ *
+ * @param $order
+ *   The loaded order that is being processed
+ * @param $payment_method
+ *   The payment method settings
+ * @param $feedback
+ *   The parameters received from Ogone regarding the payment
+ */
+function commerce_ogone_process_transaction($order, $payment_method, $feedback) {
+  $transaction = commerce_payment_transaction_new('commerce_ogone', $order->order_id);
+  $payment_status = commerce_ogone_feedback_status($feedback['STATUS']);
+
+  // identifying data
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $feedback['PAYID'];
+  // payment amount details
+  $transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
+  $transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
+  // payment status
+  $transaction->remote_status = $feedback['STATUS'];
+  $transaction->status = $payment_status['code'];
+  $transaction->message = $payment_status['message'];
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
  * Get a list of enabled currencies
  *
  * @TODO: figure out which currencies Ogone actually supports
@@ -223,6 +261,11 @@ function commerce_ogone_currencies() {
 
 /**
  * Get a payment status and message based on Ogone status ID
+ * @param $status
+ *   received Ogone status ID
+ * @return array
+ *   key 'code' contains the commerce status
+ *   key 'message' contains a textual representation of the Ogone status ID
  */
 function commerce_ogone_feedback_status($status) {
   switch ($status) {
@@ -383,6 +426,9 @@ function commerce_ogone_feedback_status($status) {
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund declined by the acquirer');
       break;
-
   }
+  return array(
+    'code' => $st,
+    'message' => $msg,
+  );
 }
