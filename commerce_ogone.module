@@ -188,7 +188,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
 }
 
 /**
- * Implements hook_redirect_form_validate.
+ * Implements hook_redirect_form_validate().
  */
 function commerce_ogone_redirect_form_validate($order, $payment_method) {
   module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha1');
@@ -201,7 +201,7 @@ function commerce_ogone_redirect_form_validate($order, $payment_method) {
     // Check if the received SHA-1 string is valid
     $sha1out = $payment_method['settings']['sha_out'];
     if (!commerce_ogone_feedback_valid_sha1($feedback, $sha1out)) {
-      watchdog('commerce_ogone', t("SHA signature doesn't match"), array(), WATCHDOG_ERROR);
+      watchdog('commerce_ogone', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
@@ -210,7 +210,7 @@ function commerce_ogone_redirect_form_validate($order, $payment_method) {
     return TRUE;
   }
   else {
-    watchdog('commerce_ogone', t('No valid SHASIGN found'), array(), WATCHDOG_ERROR);
+    watchdog('commerce_ogone', 'No valid SHASIGN found', array(), WATCHDOG_ERROR);
     return FALSE;
   }
 }
