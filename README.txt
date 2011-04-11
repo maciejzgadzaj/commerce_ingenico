@@ -25,7 +25,8 @@ Configuring Ogone
   TAB "Transaction feedback"
   * No need to fill in Accepturl, Declineurl, Exceptionurl or Cancelurl. They will be handled automatically
   * Check the checkbox "I want to receive transaction feedback parameters on the redirection URLs."
-  * @TODO: SHA-1 out pass phrase here?
+  * SHA-1-OUT Pass phrase
+    --> Enter a pass phrase here for security purposes, and remember it for later use
 
 
 Installing & configuring the Ogone payment method in Drupal Commerce
@@ -39,9 +40,10 @@ Installing & configuring the Ogone payment method in Drupal Commerce
 - Under "Payment settings", you can configure the module:
   * Ogone account: define whether to use the test or production account
   * PSPID: add your Ogone PSPID (the username you use to login as merchant)
-  * Currency code: select a currency (@TODO: check if necessary)
+  * Currency code: select a currency
   * Language code: let Ogone know in which language the payment screens should be presented
   * SHA-IN Pass phrase: enter the pass phrase you saved while configuring Ogone
+  * SHA-1-OUT Pass phrase: enter the pass phrase you saved while configuring Ogone
 - You can now process payments with Ogone!
 
 Author
