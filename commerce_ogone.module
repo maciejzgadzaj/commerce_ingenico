@@ -21,6 +21,8 @@ function commerce_ogone_commerce_payment_method_info() {
     'description' => t('Integrates Ogone payment system'),
     'terminal' => FALSE,
     'offsite' => TRUE,
+    'offsite_autoredirect' => TRUE,
+
   );
 
   return $payment_methods;
