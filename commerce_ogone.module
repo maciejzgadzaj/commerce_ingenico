@@ -228,7 +228,7 @@ function commerce_ogone_redirect_form_validate($order, $payment_method) {
  *   The parameters received from Ogone regarding the payment
  */
 function commerce_ogone_process_transaction($order, $payment_method, $feedback) {
-  $transaction = commerce_payment_transaction_new('commerce_ogone', $order->order_id);
+  $transaction = commerce_payment_transaction_new('ogone', $order->order_id);
   $payment_status = commerce_ogone_feedback_status($feedback['STATUS']);
 
   // identifying data
