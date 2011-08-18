@@ -32,5 +32,5 @@ function hook_commerce_ogone_data(&$data, $order, $settings) {
     'fr' => 'fr_FR',
     'en' => 'en_US',
   );
-  $data['LANGUAGE'] = isset $language_mapping[$language->language] ? $language_mapping[$language->language] : $settings['language'];
+  $data['LANGUAGE'] = isset($language_mapping[$language->language]) ? $language_mapping[$language->language] : $settings['language'];
 }
