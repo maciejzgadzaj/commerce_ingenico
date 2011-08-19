@@ -160,7 +160,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   );
 
   // Allow modules to add or alter the data sent to Ogone before signing.
-  drupal_alter('commerce_ogone_data', &$data, $order, $settings);
+  drupal_alter('commerce_ogone_data', $data, $order, $settings);
 
   // NOTE: data should be ordered alphabetically for the SHA-1 string
   ksort($data);
