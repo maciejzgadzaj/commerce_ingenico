@@ -19,9 +19,10 @@ Configuring Ogone
   TAB "Data and origin verification"
   * URL of the merchant page containing the payment form that will call the page:orderstandard.asp
     --> make sure to enter your correct domain here
-  * SHA-IN Pass phrase
+  * SHA-IN Pass phrase (twice!)
     --> Enter a pass phrase here for security purposes, and remember it for later use
-
+  * IP address of your server (for DirectLink - if appropriate)
+  
   TAB "Transaction feedback"
   * No need to fill in Accepturl, Declineurl, Exceptionurl or Cancelurl. They will be handled automatically
   * Check the checkbox "I want to receive transaction feedback parameters on the redirection URLs."
