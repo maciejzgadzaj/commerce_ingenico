@@ -245,6 +245,12 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback) 
   $transaction->status = $payment_status['code'];
   $transaction->message = $payment_status['message'];
   commerce_payment_transaction_save($transaction);
+  if ($payment_status['code'] == COMMERCE_PAYMENT_STATUS_FAILURE) {
+    commerce_payment_redirect_pane_previous_page($order);
+  }
+  else {
+    commerce_payment_redirect_pane_next_page($order);
+  }
 }
 
 /**
@@ -433,6 +439,10 @@ function commerce_ogone_feedback_status($status) {
     case 94:  // Refund declined by the acquirer
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund declined by the acquirer');
+      break;
+    default:
+      $st = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $msg = t('Unknown feedback status');
       break;
   }
   return array(
