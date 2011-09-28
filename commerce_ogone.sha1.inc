@@ -12,14 +12,12 @@
 function commerce_ogone_feedback_valid_sha1($feedback, $sha1out) {
   $incoming_sha1 = '';
   foreach (commerce_ogone_sha1_out_parameters() as $param) {
-    if (isset($feedback[$param])) {
+    if (isset($feedback[$param]) && $feedback[$param] !== '') {
       $incoming_sha1 .= $param . '=' . $feedback[$param] . $sha1out;
     }
   }
-  if (strtoupper(sha1($incoming_sha1)) == $feedback['SHASIGN']) {
-    return TRUE;
-  }
-  return FALSE;
+
+  return strtoupper(sha1($incoming_sha1)) === $feedback['SHASIGN'];
 }
 
 /**
