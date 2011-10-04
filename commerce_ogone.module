@@ -198,9 +198,10 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
 function commerce_ogone_redirect_form_validate($order, $payment_method) {
   module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha1');
   if (isset($_REQUEST['SHASIGN'])) {
-    // prepare $_REQUEST values that are being sent by Ogone for processing
-    $feedback = array();
-    $feedback = array_map('check_plain', $_REQUEST);
+    // Prepare the feedback values sent by Ogone for processing. We don't use
+    // $_REQUEST since this includes the $_SESSION variables.
+    $feedback = array_map('check_plain', $_GET + $_POST);
+    unset($feedback['q']);
     $feedback = array_change_key_case($feedback, CASE_UPPER);
 
     // Check if the received SHA-1 string is valid
@@ -244,6 +245,7 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback) 
   $transaction->remote_status = $feedback['STATUS'];
   $transaction->status = $payment_status['code'];
   $transaction->message = $payment_status['message'];
+  $transaction->payload = $feedback;
   commerce_payment_transaction_save($transaction);
   if ($payment_status['code'] == COMMERCE_PAYMENT_STATUS_FAILURE) {
     commerce_payment_redirect_pane_previous_page($order);
