@@ -47,6 +47,19 @@ Installing & configuring the Ogone payment method in Drupal Commerce
   * SHA-1-OUT Pass phrase: enter the pass phrase you saved while configuring Ogone
 - You can now process payments with Ogone!
 
+White-labels and Co-Brands
+==========================
+Ogone allows banks to integrate its payment platform into their commercial offer
+and to thus make the most of the potential of their network by allowing
+customers to exploit to a maximum the revenues generated from remote sales
+and electronic commerce.
+
+To use such a white-label version of Ogone, change the base URL by setting the
+'commerce_ogone_provider_url' to the white-label's URL, for example by adding
+the following line to your settings.php file:
+
+  $conf['commerce_ogone_provider_url'] = 'https://payment.example.com/foobar'
+
 Author
 ======
 Sven Decabooter (http://drupal.org/user/35369) of Pure Sign (http://puresign.be)

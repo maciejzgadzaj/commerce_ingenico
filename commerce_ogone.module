@@ -165,8 +165,9 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   // NOTE: data should be ordered alphabetically for the SHA-1 string
   ksort($data);
 
-  // Redirect to Ogone Test or Prod URL
-  $url = 'https://secure.ogone.com/ncol/' . $settings['account'] . '/orderstandard.asp';
+  // Build the Ogone redirection URL.
+  $url = variable_get('commerce_ogone_provider_url', 'https://secure.ogone.com/ncol/');
+  $url .=  $settings['account'] . '/orderstandard.asp';
   $form['#action'] = $url;
 
   // Generate SHA-1 security string & add hidden parameters to form
