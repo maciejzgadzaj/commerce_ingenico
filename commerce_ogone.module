@@ -31,8 +31,8 @@ function commerce_ogone_commerce_payment_method_info() {
 /**
  * Payment method callback: settings form.
  *
- * Returns form elements for the payment method’s settings form included
- * as part of the payment method’s enabling action in Rules
+ * Returns form elements for the payment method's settings form included
+ * as part of the payment method's enabling action in Rules
  */
 function commerce_ogone_settings_form($settings = NULL) {
   $form = array();
