@@ -51,6 +51,8 @@ function commerce_ogone_menu() {
  */
 function commerce_ogone_settings_form($settings = NULL) {
   $form = array();
+  $languages = language_list();
+  $language_codes = _commerce_ogone_get_language_code_list();
 
   $settings = (array) $settings + array(
     'account' => 'test',
@@ -59,6 +61,7 @@ function commerce_ogone_settings_form($settings = NULL) {
     'language' => '',
     'sha_in' => '',
     'sha_out' => '',
+    'language_list' => array(),
   );
 
   // BASIC settings
@@ -84,11 +87,27 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#options' => commerce_ogone_currencies(),
     '#default_value' => $settings['currency'],
   );
-  $form['language'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Language code'),
+  $form['language_list'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Language codes'),
+  );
+  foreach ($languages as $language) {
+    $default_prefix_code = explode('-', $language->prefix);
+    $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
+    $form['language_list'][$language->language] = array(
+      '#type' => 'select',
+      '#title' => check_plain($language->name),
+      '#options' => $language_codes,
+      '#default_value' => (isset($settings['language_list'][$language->language])) ? $settings['language_list'][$language->language] : $default_prefix_code,
+      '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
+    );
+  }
+  $form['language_list']['default_language'] = array(
+    '#type' => 'select',
+    '#title' => 'Default',
+    '#options' => $language_codes,
+    '#default_value' => (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US',
     '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
-    '#default_value' => $settings['language'],
   );
 
   // SECURITY settings
@@ -160,7 +179,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'ORDERID' => $order->order_number,
     'AMOUNT' => $amount,
     'CURRENCY' => $currency_code,
-    'LANGUAGE' => $settings['language'],
+    'LANGUAGE' => _commerce_ogone_get_language_code($settings),
     'CN' => $customer_name,
     'EMAIL' => $order->mail,
 
@@ -541,4 +560,62 @@ function commerce_ogone_feedback_status($status) {
     'code' => $st,
     'message' => $msg,
   );
+}
+
+
+/**
+ * Looks up the language code of a enabled language.
+ * @param $settings
+ *   Received settings
+ * @return language code
+ */
+function _commerce_ogone_get_language_code($settings) {
+  global $language;
+  $ogone_language_codes = _commerce_ogone_get_language_code_list();
+  if (isset($settings['language_list'][$language->language])) {
+    $langcode = $settings['language_list'][$language->language];
+  }
+  else {
+    $default_prefix_code = explode('-', $language->prefix);
+    $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
+    if (isset($ogone_language_codes[$default_prefix_code])) {
+      $langcode = $default_prefix_code;
+    }
+    else {
+      $langcode = $settings['language_list']['default_language'];
+    }
+  }
+  return $langcode;
+}
+
+/**
+ * Returns a list of supported Ogone language codes.
+ * @return language codes
+ */
+function _commerce_ogone_get_language_code_list() {
+  $language_codes = array(
+    'ar_AR' => t('Arabic'),
+    'cs_CZ' => t('Czech'),
+    'zh_CN' => t('Chinese'),
+    'da_DK' => t('Danish'),
+    'nl_BE' => t('Dutch (Belgium)'),
+    'nl_NL' => t('Dutch'),
+    'en_GB' => t('English (UK)'),
+    'en_US' => t('English (US)'),
+    'fr_FR' => t('French'),
+    'de_DE' => t('German'),
+    'el_GR' => t('Greek'),
+    'hu_HU' => t('Hungarian'),
+    'it_IT' => t('Italian'),
+    'ja_JP' => t('Japanese'),
+    'no_NO' => t('Norwegian'),
+    'pl_PL' => t('Polish'),
+    'pt_PT' => t('Portuguese'),
+    'ru_RU' => t('Russian'),
+    'sk_SK' => t('Slovak'),
+    'es_ES' => t('Spanish'),
+    'se_SE' => t('Swedish'),
+    'tr_TR' => t('Turkish'),
+  );
+  return $language_codes;
 }
