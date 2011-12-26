@@ -91,9 +91,16 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#type' => 'fieldset',
     '#title' => t('Language codes'),
   );
+
+  $default_language_code = (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US';
   foreach ($languages as $language) {
+    // Attempt to provide an intelligent default based on the language prefix.
+    // e.g. language prefix 'fr' would create the default Ogone language 'fr_FR'.
     $default_prefix_code = explode('-', $language->prefix);
     $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
+    // Verify whether the intelligent default value is valid. If not, fall back to default language code
+    $default_prefix_code = (in_array($default_prefix_code, array_keys($language_codes))) ? $default_prefix_code : $default_language_code;
+
     $form['language_list'][$language->language] = array(
       '#type' => 'select',
       '#title' => check_plain($language->name),
@@ -106,7 +113,7 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#type' => 'select',
     '#title' => 'Default',
     '#options' => $language_codes,
-    '#default_value' => (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US',
+    '#default_value' => $default_language_code,
     '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
   );
 
