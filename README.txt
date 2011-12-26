@@ -15,6 +15,7 @@ Configuring Ogone
 - Make sure the following settings are properly configured for this module to work:
   TAB "Global security parameters":
   * Hash algorithm: SHA-1
+  * Character encoding: UTF-8
 
   TAB "Data and origin verification"
   * URL of the merchant page containing the payment form that will call the page:orderstandard.asp

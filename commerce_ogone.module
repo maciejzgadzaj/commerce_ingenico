@@ -182,7 +182,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
 
   // Build the Ogone redirection URL.
   $url = variable_get('commerce_ogone_provider_url', 'https://secure.ogone.com/ncol/');
-  $url .=  $settings['account'] . '/orderstandard.asp';
+  $url .=  $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
 
   // Generate SHA-1 security string & add hidden parameters to form
