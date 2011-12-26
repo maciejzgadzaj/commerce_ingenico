@@ -68,7 +68,9 @@ the following line to your settings.php file:
 
   $conf['commerce_ogone_provider_url'] = 'https://payment.example.com/foobar'
 
-Author
-======
-Sven Decabooter (http://drupal.org/user/35369) of Pure Sign (http://puresign.be)
-The author can be contacted for paid customizations of this module as well as Drupal consulting and development.
+Authors
+========
+* Sven Decabooter (http://drupal.org/user/35369) of Pure Sign (http://puresign.be)
+  This author can be contacted for paid customizations of this module as well as Drupal consulting and development.
+
+* mr.baileys (http://drupal.org/user/383424)
