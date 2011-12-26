@@ -90,6 +90,8 @@ function commerce_ogone_settings_form($settings = NULL) {
   $form['language_list'] = array(
     '#type' => 'fieldset',
     '#title' => t('Language codes'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
   );
 
   $default_language_code = (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US';
