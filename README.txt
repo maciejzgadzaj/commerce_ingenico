@@ -22,12 +22,20 @@ Configuring Ogone
   * SHA-IN Pass phrase (twice!)
     --> Enter a pass phrase here for security purposes, and remember it for later use
   * IP address of your server (for DirectLink - if appropriate)
-  
+
   TAB "Transaction feedback"
   * No need to fill in Accepturl, Declineurl, Exceptionurl or Cancelurl. They will be handled automatically
-  * Check the checkbox "I want to receive transaction feedback parameters on the redirection URLs."
+  * Check the checkbox "I want to receive transaction feedback parameters on the redirection URLs.",
+    unless you intend to use Direct HTTP server-to-server requests.
   * SHA-1-OUT Pass phrase
     --> Enter a pass phrase here for security purposes, and remember it for later use
+  * Optionally configure the "Direct HTTP server-to-server request" settings,
+    if you would like to have Ogone contact your website directly for payment feedback, rather than providing the feedback on redirect.
+    (This will avoid problems with users closing their browser after payment was received, but before the redirect back to your site occurred, and other special cases).
+    --> Choose a timing setting that suits you best
+    --> Set both post-payment URLs to http://<your_website_address>/commerce_ogone/callback
+    --> Request method can be POST or GET
+    You can do the same for the setting "HTTP request for status changes" if needed.
 
 
 Installing & configuring the Ogone payment method in Drupal Commerce
