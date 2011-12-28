@@ -287,8 +287,7 @@ function commerce_ogone_callback() {
         return FALSE;
       }
       if (commerce_ogone_valid_sha1_callback($order, $payment_method, $feedback)) {
-        commerce_ogone_process_transaction($order, $payment_method, $feedback, FALSE);
-        return 'OK';
+        commerce_ogone_process_transaction($order, $payment_method, $feedback);
       }
     }
   }
