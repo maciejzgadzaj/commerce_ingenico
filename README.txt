@@ -86,4 +86,4 @@ Authors
 * Sven Decabooter (http://drupal.org/user/35369) of Pure Sign (http://puresign.be)
   This author can be contacted for paid customizations of this module as well as Drupal consulting and development.
 
-* mr.baileys (http://drupal.org/user/383424)
+* Ivo Van Geertruyen (mr.baileys, http://drupal.org/user/383424) of ONE Agency (http://one-agency.be)
