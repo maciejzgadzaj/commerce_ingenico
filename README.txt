@@ -56,6 +56,18 @@ Installing & configuring the Ogone payment method in Drupal Commerce
   * SHA-1-OUT Pass phrase: enter the pass phrase you saved while configuring Ogone
 - You can now process payments with Ogone!
 
+Dynamic templates
+=================
+Dynamic templates allow you to keep the look of your site on the payment pages.
+To use them, create a page containing $$$PAYMENT ZONE$$$ where the content of
+the payment page should be displayed. This can be a node page, a page generated
+by a custom menu router element or even a static HTML page (note that all
+references to images, css and other resources should be using absolute paths).
+The absolute URL to this page must be passed as a parameter to
+hook_commerce_ogone_data_alter() (see commerce_ogone.api.php). The template page
+must be publicly reachable, it will not work on a local development or a
+password-protected server.
+
 White-labels and Co-Brands
 ==========================
 Ogone allows banks to integrate its payment platform into their commercial offer

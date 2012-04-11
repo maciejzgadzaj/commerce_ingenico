@@ -19,7 +19,7 @@
  * @return
  *   No return value.
  */
-function hook_commerce_ogone_data(&$data, $order, $settings) {
+function hook_commerce_ogone_data_alter(&$data, $order, $settings) {
   global $language;
 
   // Set the dynamic template to be used by Ogone.
