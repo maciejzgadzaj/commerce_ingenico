@@ -285,7 +285,7 @@ function commerce_ogone_valid_sha1_callback($order, $payment_method, $feedback) 
 function commerce_ogone_callback() {
   // Load order and payment_method objects
   if ($feedback = commerce_ogone_get_feedback()) {
-    $order = commerce_order_load($feedback['ORDERID']);
+    $order = commerce_order_load_by_number($feedback['ORDERID']);
     if ($order) {
       // Load the payment method, since it won't be available if no $order object was passed in as argument
       $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
