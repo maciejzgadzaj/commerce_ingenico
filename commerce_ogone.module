@@ -245,14 +245,20 @@ function commerce_ogone_redirect_form_validate($order, $payment_method) {
 }
 
 /**
- * Get Ogone feedback from GET / POST parameters
+ * Gets the Ogone feedback from GET / POST parameters.
+ *
+ * @return
+ *   An associative array containing the Ogone feedback taken from the $_GET and
+ *   $_POST superglobals, excluding 'q' and with the parameter keys uppercased.
+ *   Returns FALSE if the SHASIGN parameter is missing (indicating missing or
+ *   invalid Ogone feedback).
  */
 function commerce_ogone_get_feedback() {
   $feedback = FALSE;
   if (isset($_REQUEST['SHASIGN'])) {
     // Prepare the feedback values sent by Ogone for processing. We don't use
     // $_REQUEST since this includes the $_SESSION variables.
-    $feedback = array_map('check_plain', $_GET + $_POST);
+    $feedback = $_GET + $_POST;
     unset($feedback['q']);
     $feedback = array_change_key_case($feedback, CASE_UPPER);
   }
