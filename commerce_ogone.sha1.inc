@@ -21,15 +21,23 @@ function commerce_ogone_feedback_valid_sha1($feedback, $sha1out) {
 }
 
 /**
- * Get a list of valid SHA-1 out parameters
+ * Returns a list of valid SHA-1 out parameters.
+ *
+ * See "17.2 SHA-OUT" in "e-Commerce Advanced - Technical Integration Guide for
+ * e-Commerce v.5.4.0" for more information.
+ *
+ * @return
+ *   An array of parameter names to take into account when calculating the
+ *   SHA1-OUT security hash.
  */
 function commerce_ogone_sha1_out_parameters() {
   return array('AAVADDRESS', 'AAVCHECK', 'AAVZIP', 'ACCEPTANCE', 'ALIAS', 'AMOUNT',
     'BIN', 'BRAND', 'CARDNO', 'CCCTY', 'CN', 'COMPLUS', 'CREATION_STATUS', 'CURRENCY',
-    'CVCCHECK', 'DCC_COMMPERCENTAGE', 'DCC_CONVAMOUNT', 'DCC_CONVCCY', 'DCC_EXCHRATE',
-    'DCC_EXCHRATESOURCE', 'DCC_EXCHRATETS', 'DCC_INDICATOR', 'DCC_MARGINPERCENTAGE',
-    'DCC_VALIDHOURS', 'DIGESTCARDNO', 'ECI', 'ED', 'ENCCARDNO', 'IP', 'IPCTY',
-    'NBREMAILUSAGE', 'NBRIPUSAGE', 'NBRIPUSAGE_ALLTX', 'NBRUSAGE', 'NCERROR',
-    'ORDERID', 'PAYID', 'PM', 'SCO_CATEGORY', 'SCORING', 'STATUS', 'SUBSCRIPTION_ID',
-    'TRXDATE', 'VC');
+    'CVC', 'CVCCHECK', 'DCC_COMMPERCENTAGE', 'DCC_CONVAMOUNT', 'DCC_CONVCCY',
+    'DCC_EXCHRATE', 'DCC_EXCHRATESOURCE', 'DCC_EXCHRATETS', 'DCC_INDICATOR',
+    'DCC_MARGINPERCENTAGE', 'DCC_VALIDHOURS', 'DIGESTCARDNO', 'ECI', 'ED',
+    'ENCCARDNO', 'IP', 'IPCTY', 'NBREMAILUSAGE', 'NBRIPUSAGE',
+    'NBRIPUSAGE_ALLTX', 'NBRUSAGE', 'NCERROR', 'NCERRORCARDNO', 'NCERRORCN',
+    'NCERRORCVC', 'NCERRORED', 'ORDERID', 'PAYID', 'PM', 'SCO_CATEGORY',
+    'SCORING', 'STATUS', 'SUBBRAND', 'SUBSCRIPTION_ID', 'TRXDATE', 'VC');
 }
