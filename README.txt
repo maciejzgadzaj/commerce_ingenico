@@ -34,7 +34,7 @@ Configuring Ogone
     if you would like to have Ogone contact your website directly for payment feedback, rather than providing the feedback on redirect.
     (This will avoid problems with users closing their browser after payment was received, but before the redirect back to your site occurred, and other special cases).
     --> Choose a timing setting that suits you best
-    --> Set both post-payment URLs to http://<your_website_address>/commerce_ogone/callback
+    --> Set both post-payment URLs to http://<your_website_address>/commerce-ogone/callback
     --> Request method can be POST or GET
     You can do the same for the setting "HTTP request for status changes" if needed.
 

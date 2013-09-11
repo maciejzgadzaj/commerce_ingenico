@@ -33,7 +33,7 @@ function commerce_ogone_commerce_payment_method_info() {
 function commerce_ogone_menu() {
   $items = array();
 
-  $items['commerce_ogone/callback'] = array(
+  $items['commerce-ogone/callback'] = $items['commerce_ogone/callback'] = array(
     'page callback' => 'commerce_ogone_callback',
     'page arguments' => array(),
     'access callback' => TRUE,
