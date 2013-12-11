@@ -360,8 +360,8 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback, 
   $transaction->instance_id = $payment_method['instance_id'];
   $transaction->remote_id = $feedback['PAYID'];
   // payment amount details
-  $transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
-  $transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
+  $transaction->currency_code = $feedback['CURRENCY'];
+  $transaction->amount = commerce_currency_decimal_to_amount($feedback['AMOUNT'], $feedback['CURRENCY']);
   // payment status
   $transaction->remote_status = $feedback['STATUS'];
   $transaction->status = $payment_status['code'];
