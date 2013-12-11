@@ -178,7 +178,12 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   // Get financial info
   $currency_code = $wrapper->commerce_order_total->currency_code->value();
   $amount = $wrapper->commerce_order_total->amount->value();
-  $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+  if (!empty($wrapper->commerce_customer_billing->value()->commerce_customer_address)) {
+    $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+  }
+  else {
+    $customer_name = '';
+  }
 
   // Build the data array that will be translated into hidden form values.
   // NOTE: keys should be uppercase for the SHA-1 security string
