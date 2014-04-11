@@ -1,9 +1,42 @@
 <?php
-
 /**
  * @file
  * Implements Ogone payment services for use in Drupal Commerce.
  */
+
+define('COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED', 'CAPTURED');
+define('COMMERCE_PAYMENT_STATUS_OGONE_REFUND', 'REFUNDED');
+define('COMMERCE_PAYMENT_STATUS_OGONE_CANCELED', 'CANCELED');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function commerce_ogone_libraries_info() {
+  $libraries['ogone'] = array(
+    'name' => 'Ogone',
+    'vendor url' => 'http://www.marlon.be/',
+    'download url' => 'https://github.com/marlon-be/marlon-ogone/archive/master.zip',
+    'path' => 'lib',
+    'version arguments' => array(
+    'file' => 'VERSION',
+    'pattern' => '@([a-z0-9\.-]+)@',
+    'lines' => 1,
+    'cols' => 10,
+    ),
+    'files' => array(
+      'php' => array(
+        'Ogone/ShaComposer/ShaComposer.php',
+        'Ogone/HashAlgorithm.php',
+        'Ogone/ShaComposer/AllParametersShaComposer.php',
+        'Ogone/Passphrase.php',
+        'Ogone/ParameterFilter/ParameterFilter.php',
+        'Ogone/ParameterFilter/GeneralParameterFilter.php',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
 
 /**
  * Implements hook_commerce_payment_method_info().
@@ -13,15 +46,30 @@
 function commerce_ogone_commerce_payment_method_info() {
   $payment_methods = array();
 
-  $payment_methods['ogone'] = array(
+  $payment_methods['ogone_offsite'] = array(
     'base' => 'commerce_ogone',
-    'title' => t('Ogone'),
-    'short_title' => t('Ogone'),
-    'display_title' => t('Ogone'),
+    'title' => t('Ogone - offsite payment'),
+    'short_title' => t('Ogone offsite'),
+    'display_title' => t('Ogone offsite'),
     'description' => t('Integrates Ogone payment system'),
     'terminal' => FALSE,
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
+    'active' => FALSE,
+  );
+
+  $payment_methods['ogone_direct'] = array(
+    'base' => 'commerce_ogone',
+    'title' => t('Ogone - direct payment'),
+    'short_title' => t('Ogone direct'),
+    'display_title' => t('Ogone direct'),
+    'description' => t('Integrates Ogone payment system'),
+    'terminal' => FALSE,
+    'offsite' => FALSE,
+    'offsite_autoredirect' => FALSE,
+    'active' => FALSE,
+    'callback' => array(),
+    'file' => 'include/commerce_ogone_direct.inc',
   );
 
   return $payment_methods;
@@ -33,14 +81,232 @@ function commerce_ogone_commerce_payment_method_info() {
 function commerce_ogone_menu() {
   $items = array();
 
-  $items['commerce-ogone/callback'] = $items['commerce_ogone/callback'] = array(
+  $items['commerce_ogone/callback'] = array(
     'page callback' => 'commerce_ogone_callback',
     'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    //'file' => 'commerce_ogone.module',
+  );
+
+  // Add a menu item for capturing.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ogone-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_ogone_capture_form', 3, 5),
+    'access callback' => 'commerce_opgone_capture_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'include/commerce_ogone.admin.inc',
+    'weight' => 1,
+  );
+
+  // Add a menu item for refund.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ogone-refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_ogone_refund_form', 3, 5),
+    'access callback' => 'commerce_ogone_refund_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'include/commerce_ogone.admin.inc',
+    'weight' => 2,
+  );
+
+    // Add a menu item for cancel.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/cancel'] = array(
+    'title' => 'Cancel',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_ogone_cancel_form', 3, 5),
+    'access callback' => 'commerce_ogone_cancel_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'include/commerce_ogone.admin.inc',
+    'weight' => 2,
+  );
+
+   // Add a menu item for deletion.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payment_payment_transaction_delete_form_validate', 3, 5),
+    'access callback' => 'commerce_ogone_delete_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'include/commerce_ogone.admin.inc',
+    'weight' => -100,
+  );
+
+  //Define a path to start the authorization process.
+  $items['commerce_ogone/3d_secure'] = array(
+    'page callback' => 'commerce_ogone_3d_secure',
+    //'page arguments' => array('commerce_ogone_3d_secure', 1,2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  //Define a path to receive 3D Secure callback.
+  $items['commerce_ogone/3ds/callback'] = array(
+    'page callback' => 'commerce_ogone_3d_secure_callback',
+    'page arguments' => array(3),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function commerce_ogone_menu_alter(&$items) {
+  //Create the path to the file to modify.
+  $path = drupal_get_path('module', 'commerce_ogone');
+  $file_path = $path . '/include/commerce_ogone.admin.inc';
+  require_once $file_path;
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_ogone_transaction_delete_form', 3, 5),
+    'access callback' => 'commerce_ogone_delete_access',
+    //'access callback' => TRUE,
+    'access arguments' => array(3, 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => $file_path,
+    'weight' => 10,
+  );
+
+//  return $items;
+}
+
+/**
+ * Begin the 3d authorization procedure.
+ */
+function commerce_ogone_3d_secure() {
+  $form_redirect = $_GET['result'];
+  $decode_page = base64_decode($form_redirect);
+  if (strstr($decode_page, '&#58;') != FALSE) {
+    $form_redirect = str_replace('&#58;', ':', $decode_page);
+  }
+  return $form_redirect;
+}
+
+/**
+ * Callback from the 3d secure procedure.
+ */
+function commerce_ogone_3d_secure_callback() {
+  global $user, $base_root;
+  $order_id = $_GET['ORDERID'];
+  $order = commerce_order_load($order_id);
+
+  $order->status = 'pending';
+  commerce_order_save($order);
+
+  $payment_method = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+  //Store the transaction.
+  $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+  $transaction->uid = $user->uid;
+  $transaction->order_id = $order->order_id;
+  $transaction->payment_method = 'ogone_direct';
+  $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
+  $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+  if ($payment_method['settings']['transaction_type_process'] == 'capture_manual') {
+    $transaction->message = 'Payment requested';
+  }
+  else {
+    $transaction->message = 'Payment requested';
+  }
+  $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
+  $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
+  $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+  $transaction->remote_status = $_GET['STATUS'];
+  $transaction->created = $order->created;
+
+  commerce_payment_transaction_save($transaction);
+
+  //Check if the 3d secure has faild.
+  if (!empty($_GET['3D']) and $_GET['3D'] == 'failed') {
+    if ( $payment_method['settings']['3d_secure'] == 2 and $_GET['NCSTATUS'] == 0 and $_GET['NCERROR'] == 0) {
+      drupal_set_message(t('Your transaction was accepted!'), 'status');
+      return drupal_goto($base_root);
+    }
+    else {
+      $api = commerce_ogone_api_object();
+      $remote_order_id = $_GET['REMOTE_ORDER_ID'];
+      $order->order_id = $remote_order_id;
+      $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel', $pay_id = $_GET['PAYID'], $sub_id = '', $amount = '');
+
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      commerce_payment_transaction_save($transaction);
+      drupal_set_message(t('You can only use 3D secure card for this transaction! Your transaction has been denny!'), 'error');
+      return drupal_goto($base_root);
+    }
+  }
+
+
+  //If successeful operation go to checkout complete.
+  return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
+}
+
+/**
+ * Determine whether the user has permissions to perform capture.
+ */
+function commerce_opgone_capture_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Ogone or isn't
+  // awaiting capture.
+  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determine whether the user has permissions to perform refund.
+ */
+function commerce_ogone_refund_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Ogone or isn't
+  // awaiting capture.
+  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED) {
+    return FALSE;
+  }
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determine whether the user has permissions to perform cancel.
+ */
+function commerce_ogone_cancel_access($order, $transaction) {
+  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determine whether the user has permissions to perform deletion.
+ */
+function commerce_ogone_delete_access($order, $transaction) {
+  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Creates api object.
+ */
+function commerce_ogone_api_object($settings = array()) {
+  module_load_include('php', 'commerce_ogone', 'commerce_ogone.api');
+  $instance = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+
+  return new OgoneApi($settings + $instance['settings']);
 }
 
 /**
@@ -68,6 +334,7 @@ function commerce_ogone_settings_form($settings = NULL) {
   $form['account'] = array(
     '#type' => 'radios',
     '#title' => t('Ogone account'),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'account')),
     '#options' => array(
       'test' => ('Test account - for testing purposes only'),
       'prod' => ('Production account - use for processing real transactions'),
@@ -76,20 +343,95 @@ function commerce_ogone_settings_form($settings = NULL) {
   );
   $form['pspid'] = array(
     '#type' => 'textfield',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'pspid')),
     '#title' => t('PSPID'),
     '#description' => t('Your Ogone PSPID login username'),
     '#default_value' => $settings['pspid'],
+    '#required' => TRUE,
   );
-  $form['currency'] = array(
+
+  $form['userid'] = array(
+    '#type' => 'textfield',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'userid')),
+    '#title' => t('USERID'),
+    '#description' => t('Your API username.'),
+    '#default_value' => !empty($settings['userid']) ? $settings['userid'] : '',
+    '#required' => TRUE,
+  );
+
+  $form['password'] = array(
+    '#type' => 'password',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'password')),
+    '#title' => t('PSWD'),
+    '#description' => t('Your API password.'),
+    '#default_value' => !empty($settings['password']) ? $settings['password'] : '',
+    '#required' => TRUE,
+  );
+
+  // SECURITY settings
+  $form['sha_algorithm'] = array(
     '#type' => 'select',
-    '#title' => t('Currency code'),
-    '#description' => t('Transactions can only be processed in one of the listed currencies.'),
-    '#options' => commerce_ogone_currencies(),
-    '#default_value' => $settings['currency'],
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'selectsha')),
+    '#title' => t('Select SHA algorithm type.'),
+    '#description' => t('You can choose from SHA-1, SHA-256 and SHA-512 algorithm types to hash your data.'),
+    '#options' => array(
+        'SHA-1' => 'SHA-1',
+        'SHA-256' => 'SHA-256',
+        'SHA-512' => 'SHA-512',
+    ),
+    '#default_value' => !empty($settings['sha_algorithm']) ? $settings['sha_algorithm'] : '',
+    '#required' => TRUE,
   );
+
+  $form['sha_in'] = array(
+    '#type' => 'textfield',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'shain')),
+    '#title' => t('SHA-IN Pass phrase.'),
+    '#description' => t('The SHA-IN Pass phrase as entered in Ogone technical settings - "Data and origin verification" tab.'),
+    '#default_value' => $settings['sha_in'],
+    '#required' => TRUE,
+  );
+
+  $form['sha_out'] = array(
+    '#type' => 'textfield',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'shaout')),
+    '#title' => t('SHA-OUT Pass phrase.'),
+    '#description' => t('The SHA-OUT Pass phrase as entered in Ogone technical settings - "Transaction feedback" tab.'),
+    '#default_value' => $settings['sha_out'],
+    '#required' => TRUE,
+  );
+
+  if (strstr(current_path(), 'ogone_direct')) {
+    $form['3d_secure'] = array(
+      '#type' => 'radios',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => '3d-secure')),
+      '#title' => t('3D Secure security check of customers cards.'),
+      '#default_value' => !empty($settings['3d_secure']) ? $settings['3d_secure'] : '0',
+      '#options' => array(
+        '0' => t('Do not perform 3D-Secure checks and always authorise.'),
+        '1' => t('Allways require authentication.'),
+      ),
+    );
+  }
+
+  if (strstr(current_path(), 'ogone_direct')) {
+    $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
+  }
+
+  $form['transaction_type_process'] = array(
+    '#type' => 'radios',
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'transaction')),
+    '#title' => t('Transaction capture method'),
+    '#default_value' => empty($settings['transaction_type_process']) ? 'sale' : $settings['transaction_type_process'],
+    '#options' => array(
+      'sale' => t('Authomatic'),
+      'capture_manual' => t('Manual'),
+    ),
+  );
+
   $form['language_list'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Language codes'),
+    '#title' => t('Language codes') . theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'languages')),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -97,13 +439,13 @@ function commerce_ogone_settings_form($settings = NULL) {
   $default_language_code = (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US';
   foreach ($languages as $language) {
     // Attempt to provide an intelligent default based on the language prefix.
-    // e.g. language prefix 'fr' would create the default Ogone language 'fr_FR'.
+    // for example language prefix 'fr' would create the default Ogone language 'fr_FR'.
     $default_prefix_code = explode('-', $language->prefix);
     $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
     // Verify whether the intelligent default value is valid. If not, fall back to default language code
     $default_prefix_code = (in_array($default_prefix_code, array_keys($language_codes))) ? $default_prefix_code : $default_language_code;
 
-    $form['language_list'][$language->language] = array(
+  $form['language_list']['selected'] = array(
       '#type' => 'select',
       '#title' => check_plain($language->name),
       '#options' => $language_codes,
@@ -119,24 +461,49 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
   );
 
-  // SECURITY settings
-  $form['sha_in'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SHA-IN Pass phrase'),
-    '#description' => t('The SHA-IN Pass phrase as entered in Ogone technical settings - "Data and origin verification" tab.'),
-    '#default_value' => $settings['sha_in'],
-  );
-  $form['sha_out'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SHA-1-OUT Pass phrase'),
-    '#description' => t('The SHA-1-OUT Pass phrase as entered in Ogone technical settings - "Transaction feedback" tab.'),
-    '#default_value' => $settings['sha_out'],
+  //Hidden form element for initial validation.
+  $form['validate'] = array(
+    '#type' => 'hidden',
+    '#title' => t('validate'),
+    '#description' => t('validate'),
+    '#element_validate' => array('validate_element'),
   );
 
-  // @TODO: LAYOUT settings
   $form['#submit'][] = 'commerce_ogone_settings_form_submit';
 
   return $form;
+}
+
+/**
+ * Validate the merchant credentials(compare them with the ones entered on Ogone site).
+ */
+function validate_element($element, $form, &$form_state) {
+  $elements = explode(',', $element['#value']);
+
+  //Test the entered credentials.
+  $transaction = commerce_payment_transaction_new('ogone', 0);
+  $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
+
+  $settings = array(
+    'pspid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['pspid'],
+    'userid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['userid'],
+    'password' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['password'],
+    'sha_in' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in'],
+    'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
+  );
+
+  include_once('commerce_ogone.api.php');
+  $api = new OgoneApi($settings);
+  $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
+
+  $data = $api->get_response_data($result->data);
+
+  if ($data['NCERRORPLUS'] === 'The data you entered is not correct. Please retry.') {
+    form_error($element, t('Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user).'));
+    //drupal_set_message(t('PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase are required!'), 'error');
+  }
+
+  return TRUE;
 }
 
 /**
@@ -172,66 +539,92 @@ function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_meth
  * Builds an Ogone payment form from an order object.
  */
 function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settings) {
-  global $user;
+  global $user, $base_root;
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
 
   // Get financial info
   $currency_code = $wrapper->commerce_order_total->currency_code->value();
   $amount = $wrapper->commerce_order_total->amount->value();
-  if (!empty($wrapper->commerce_customer_billing->value()->commerce_customer_address)) {
-    $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+  $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+  //Get the device
+  if (strstr($_SERVER['HTTP_USER_AGENT'], 'Android') != FALSE) {
+    $device = 'mobile';
+  }
+  elseif (strstr($_SERVER['HTTP_USER_AGENT'], 'Macintosh') != FALSE) {
+    $device = 'Macintosh';
+  }
+  elseif (strstr($_SERVER['HTTP_USER_AGENT'], 'Linux') != FALSE) {
+    $device = 'Linux';
+  }
+  elseif (strstr($_SERVER['HTTP_USER_AGENT'], 'Windows') != FALSE) {
+    $device = 'Windows';
   }
   else {
-    $customer_name = '';
+    $device = 'mobile';
   }
-
   // Build the data array that will be translated into hidden form values.
-  // NOTE: keys should be uppercase for the SHA-1 security string
+  // NOTE: keys should be uppercase for the SHA security string
   $data = array(
     // General parameters
     'PSPID' => $settings['pspid'],
-    'ORDERID' => $order->order_number,
+    'ORDERID' => $order->order_id . '-' . time(),
     'AMOUNT' => $amount,
     'CURRENCY' => $currency_code,
     'LANGUAGE' => _commerce_ogone_get_language_code($settings),
     'CN' => $customer_name,
     'EMAIL' => $order->mail,
-
     // Layout
     'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
-
     // Feedback URLs
     'ACCEPTURL' => $settings['return'],
     'DECLINEURL' => $settings['return'],
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
+    'DEVICE' => $device,
   );
+  if ($settings['3d_secure'] == 1) {
+    $data['WIN3DS'] = 'MAINW';
+    $data['FLAG3D'] = 'Y';
+  }
 
+  if ($settings['transaction_type_process'] == 'sale') {
+    $data['OPERATION'] = 'SAL';
+  }
+  elseif ($settings['transaction_type_process'] == 'capture_manual') {
+    $data['OPERATION'] = 'RES';
+  }
   // Allow modules to add or alter the data sent to Ogone before signing.
   drupal_alter('commerce_ogone_data', $data, $order, $settings);
 
-  // NOTE: data should be ordered alphabetically for the SHA-1 string
+  // NOTE: data should be ordered alphabetically for the SHA string
   ksort($data);
 
   // Build the Ogone redirection URL.
   $url = variable_get('commerce_ogone_provider_url', 'https://secure.ogone.com/ncol/');
   $url .=  $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
+  $api = commerce_ogone_api_object();
+  //Get the hash algorithm.
+  $sha_composer = $api->prepare_phrase_to_hash('sha_in');
+  //Hash the sha phrace with the billing data.
+  $shasign = $sha_composer->compose($data);
 
-  // Generate SHA-1 security string & add hidden parameters to form
-  $sha1_sig = '';
-  $sha1suffix = $settings['sha_in'];
+  // Generate SHA security string & add hidden parameters to form
+  $sha_sig = '';
+  //$shasuffix = $settings['sha_in'];
   foreach ($data as $name => $value) {
     if (!empty($value)) {
       $value = trim($value);
-      // Build the SHA-1 string from all filled in parameters
-      $sha1_sig .= $name . '=' . $value . $sha1suffix;
+      // Build the SHA string from all filled in parameters
+      //$sha_sig .= $name . '=' . $value . $shasuffix;
       // Add the value as a hidden form element
       $form[$name] = array('#type' => 'hidden', '#value' => $value);
     }
   }
-  // Add the calculated SHA-1 string
-  $form['SHASign'] = array('#type' => 'hidden', '#value' => sha1($sha1_sig));
+
+  // Add the calculated SHA string
+  //$form['SHASign'] = array('#type' => 'hidden', '#value' => sha($sha_sig));
+  $form['SHASign'] = array('#type' => 'hidden', '#value' => $shasign);
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -271,13 +664,13 @@ function commerce_ogone_get_feedback() {
 }
 
 /**
- * Check if SHA1 in callback feedback is valid
+ * Check if SHA in callback feedback is valid
  */
-function commerce_ogone_valid_sha1_callback($order, $payment_method, $feedback) {
-  module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha1');
-  // Check if the received SHA-1 string is valid
-  $sha1out = $payment_method['settings']['sha_out'];
-  if (!commerce_ogone_feedback_valid_sha1($feedback, $sha1out)) {
+function commerce_ogone_valid_sha_callback($order, $payment_method, $feedback) {
+  module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha');
+  // Check if the received SHA string is valid
+ // $sha_out = $payment_method['settings']['sha_out'];
+  if (!commerce_ogone_feedback_valid_sha($feedback)) {
     watchdog('commerce_ogone', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
     return FALSE;
   }
@@ -297,7 +690,7 @@ function commerce_ogone_callback() {
       if (!$payment_method || $payment_method['method_id'] != 'ogone') {
         return FALSE;
       }
-      if (commerce_ogone_valid_sha1_callback($order, $payment_method, $feedback)) {
+      if (commerce_ogone_valid_sha_callback($order, $payment_method, $feedback)) {
         commerce_ogone_process_transaction($order, $payment_method, $feedback);
       }
     }
@@ -311,7 +704,7 @@ function commerce_ogone_callback() {
  */
 function commerce_ogone_process_callback($order, $payment_method) {
   if ($feedback = commerce_ogone_get_feedback()) {
-    if (commerce_ogone_valid_sha1_callback($order, $payment_method, $feedback)) {
+    if (commerce_ogone_valid_sha_callback($order, $payment_method, $feedback)) {
       // Process the transaction based on the Ogone parameters received
       commerce_ogone_process_transaction($order, $payment_method, $feedback);
       return TRUE;
@@ -365,11 +758,12 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback, 
   $transaction->instance_id = $payment_method['instance_id'];
   $transaction->remote_id = $feedback['PAYID'];
   // payment amount details
-  $transaction->currency_code = $feedback['CURRENCY'];
-  $transaction->amount = commerce_currency_decimal_to_amount($feedback['AMOUNT'], $feedback['CURRENCY']);
+  $transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
+  $transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
   // payment status
+  $transaction->payment_method = 'ogone_offsite';
   $transaction->remote_status = $feedback['STATUS'];
-  $transaction->status = $payment_status['code'];
+  $transaction->status =  ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
   $transaction->message = $payment_status['message'];
   $transaction->payload = $feedback;
   commerce_payment_transaction_save($transaction);
@@ -413,160 +807,160 @@ function commerce_ogone_currencies() {
  */
 function commerce_ogone_feedback_status($status) {
   switch ($status) {
-    /** SUCCESS **/
-    case 4:  // Order stored
+    //Success.
+    case 4:  //Order stored
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Order stored');
       break;
-    case 5:  // Authorized
+    case 5:  //Authorized
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Authorized');
       break;
-    case 8:  // Refund
+    case 8:  //Refund
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Refund');
       break;
-    case 85:  // Refund processed by merchant
+    case 85:  //Refund processed by merchant
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Refund processed by merchant');
       break;
-    case 9:  // Payment requested
+    case 9:  //Payment requested
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Payment requested');
       break;
-    case 95:  // Payment processed by merchant
+    case 95:  //Payment processed by merchant
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Payment processed by merchant');
       break;
 
-    /** PENDING **/
-    case 40: // Stored waiting external result
+    //Pending.
+    case 40: //Stored waiting external result
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Stored waiting external result');
       break;
-    case 41: // Waiting client payment
+    case 41: //Waiting client payment
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Waiting client payment');
       break;
-    case 50: // Authorized waiting external result
+    case 50: //Authorized waiting external result
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authorized waiting external result');
       break;
-    case 51: // Authorization waiting
+    case 51: //Authorization waiting
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authorization waiting');
       break;
-    case 55: // Stand-by
+    case 55: //Stand-by
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Stand-by');
       break;
-    case 56: // OK with scheduled payments
+    case 56: //OK with scheduled payments
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('OK with scheduled payments');
       break;
-    case 59: // Authoriz. to get manually
+    case 59: //Authoriz. to get manually
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authoriz. to get manually');
       break;
-    case 81: // Refund pending
+    case 81: //Refund pending
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Refund pending');
       break;
-    case 82: // Refund uncertain
+    case 82: //Refund uncertain
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Refund uncertain');
       break;
-    case 91: // Payment processing
+    case 91: //Payment processing
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Payment processing');
       break;
-    case 92: // Payment uncertain
+    case 92: //Payment uncertain
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Payment uncertain');
       break;
-    case 99: // Being processed
+    case 99: //Being processed
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Being processed');
       break;
 
-    /** FAILURE **/
-    case 0:  // Incomplete or invalid
+    //Failure.
+    case 0:  //Incomplete or invalid
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Incomplete or invalid');
       break;
-    case 1:  // Cancelled by client
+    case 1:  //Cancelled by client
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Cancelled by client');
       break;
-    case 2:  // Authorization refused
+    case 2:  //Authorization refused
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorization refused');
       break;
-    case 52: // Authorization not known
+    case 52: //Authorization not known
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorization not known');
       break;
-    case 57: // Error in scheduled payments
+    case 57: //Error in scheduled payments
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Error in scheduled payments');
       break;
-    case 6:  // Authorized and cancelled
+    case 6:  //Authorized and cancelled
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorized and cancelled');
       break;
-    case 61: // Author. deletion waiting
+    case 61: //Author. deletion waiting
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion waiting');
       break;
-    case 62: // Author. deletion uncertain
+    case 62: //Author. deletion uncertain
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion uncertain');
       break;
-    case 63: // Author. deletion refused
+    case 63: //Author. deletion refused
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion refused');
       break;
-    case 64: // Authorized and cancelled
+    case 64: //Authorized and cancelled
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorized and cancelled');
       break;
-    case 7:  // Payment deleted
+    case 7:  //Payment deleted
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deleted');
       break;
-    case 71:  // Payment deletion pending
+    case 71:  //Payment deletion pending
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion pending');
       break;
-    case 72:  // Payment deletion uncertain
+    case 72:  //Payment deletion uncertain
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion uncertain');
       break;
-    case 73:  // Payment deletion refused
+    case 73:  //Payment deletion refused
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion refused');
       break;
-    case 74:  // Payment deleted
+    case 74:  //Payment deleted
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deleted');
       break;
-    case 75:  // Deletion processed by merchant
+    case 75:  //Deletion processed by merchant
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Deletion processed by merchant');
       break;
-    case 83:  // Refund refused
+    case 83:  //Refund refused
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund refused');
       break;
-    case 84:  // Payment declined by the acquirer
+    case 84:  //Payment declined by the acquirer
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment declined by the acquirer');
       break;
-    case 93:  // Payment refused
+    case 93:  //Payment refused
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment refused');
       break;
-    case 94:  // Refund declined by the acquirer
+    case 94:  //Refund declined by the acquirer
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund declined by the acquirer');
       break;
@@ -637,4 +1031,82 @@ function _commerce_ogone_get_language_code_list() {
     'tr_TR' => t('Turkish'),
   );
   return $language_codes;
+}
+
+/**
+ * Loads transactions by transaction id.
+ */
+function commerce_ogone_transaction_load($transaction_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_payment_transaction')
+  ->propertyCondition('transaction_id', $transaction_id)
+  ->propertyOrderBy('transaction_id', 'DESC');
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_payment_transaction'])) {
+    foreach ($result['commerce_payment_transaction'] as $transaction_id) {
+      $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Implements hool_commerce_payment_transaction_status_info().
+ */
+function commerce_ogone_commerce_payment_transaction_status_info() {
+  $statuses = array();
+
+  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED,
+    'title' => t('Captured'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
+    'total' => FALSE,
+  );
+
+  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_REFUND] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_OGONE_REFUND,
+    'title' => t('Refund'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
+    'total' => FALSE,
+  );
+
+  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_CANCELED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_OGONE_CANCELED,
+    'title' => t('Canceled'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-failure.png',
+    'total' => FALSE,
+  );
+
+  return $statuses;
+}
+
+/**
+ * Capture function to be implemented with rules.
+ */
+function commerce_ogone_capture($transaction, $amount, $order, $payment_method) {
+  $order = commerce_order_load($transaction->order_id);
+  $payment_methods = commerce_payment_method_instance_load($transaction->instance_id);
+  $transaction_method = explode('|', $transaction->instance_id);
+  $transaction_method = $transaction_method[0];
+  $transaction->amount = $amount;
+  $description = t('Authorization capture for order #@order_id at @site_name', array(
+    '@order_id' => $order->order_id,
+    '@site_name' => variable_get('site_name', ''),
+  ));
+  $api = commerce_ogone_api_object();
+  $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
+  $data = $api->get_response_data($result->data);
+  if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
+    $transaction->amount = commerce_currency_decimal_to_amount($amount, $transaction->currency_code);
+    $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
+    $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+    $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+    commerce_payment_transaction_save($transaction);
+    return TRUE;
+  }
+  else {
+    drupal_set_message(t('The operation was not successful.'), 'error');
+    return FALSE;
+  }
 }
