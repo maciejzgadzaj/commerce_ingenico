@@ -327,7 +327,7 @@ function commerce_ogone_cancel_form_submit($form, &$form_state) {
         commerce_payment_transaction_save($transaction);
         drupal_set_message(t('The transaction has been canceled.'), 'status');
       }
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
   }
 }
 
