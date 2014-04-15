@@ -96,6 +96,19 @@ function commerce_ogone_capture_form_submit($form, &$form_state) {
       commerce_payment_transaction_save($transaction);
       drupal_goto('admin/commerce/orders');
     }
+    elseif ($data['NCERROR'] == '50001127') {
+      $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
+      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+      commerce_payment_transaction_save($transaction);
+      $query = $api->query($transaction, $pay_id = $data['PAYID'], $sub_id = $data['PAYIDSUB'] - 1);
+      drupal_set_message('This order has been captured previously.');
+      drupal_goto('admin/commerce/orders');
+    }
+    else {
+      drupal_set_message('An error occur(' . $data['NCERRORPLUS'] . '.');
+      drupal_goto('admin/commerce/orders');
+    }
   }
   elseif ($transaction->amount > commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $charge = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
