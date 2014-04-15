@@ -35,7 +35,7 @@ function commerce_ogone_requirements($phase) {
       $requirements['ogone'] = array(
         'title' => $t('Ogone PHP library'),
         'description' => $t('Ogone PHP library is required.'),
-        'value' => $library['error message'],
+        'value' => !empty($library['error message']) ? $library['error message'] : 'error',
         'severity' => REQUIREMENT_ERROR,
         'description' => $t('
           See the <a href="@help_url">project page</a> for install instructions.
