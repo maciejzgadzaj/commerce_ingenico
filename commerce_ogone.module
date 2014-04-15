@@ -1061,7 +1061,7 @@ function commerce_ogone_commerce_payment_transaction_status_info() {
     'status' => COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED,
     'title' => t('Captured'),
     'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
-    'total' => FALSE,
+    'total' => TRUE,
   );
 
   $statuses[COMMERCE_PAYMENT_STATUS_OGONE_REFUND] = array(
