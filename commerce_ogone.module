@@ -360,7 +360,7 @@ function commerce_ogone_settings_form($settings = NULL) {
   );
 
   $form['password'] = array(
-    '#type' => 'password',
+    '#type' => 'textfield',
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'password')),
     '#title' => t('PSWD'),
     '#description' => t('Your API password.'),
