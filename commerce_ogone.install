@@ -45,7 +45,7 @@ function commerce_ogone_requirements($phase) {
           and place it in <code>@install_path</code>',
           array(
             '@library_url' => empty($library['download url']) ? 'https://github.com/marlon-be/marlon-ogone' : $library['download url'],
-            '@help_url' => url('https://drupal.org/project/ogone'),
+            '@help_url' => url('https://drupal.org/project/commerce_ogone'),
             '@install_path' => 'sites/all/libraries/ogone',
           )
         ),
@@ -81,7 +81,7 @@ function commerce_ogone_requirements($phase) {
           and place it in <code>@install_path</code>',
           array(
             '@library_url' => empty($library['download url']) ? 'https://github.com/marlon-be/marlon-ogone' : $library['download url'],
-            '@help_url' => url('https://drupal.org/project/ogone'),
+            '@help_url' => url('https://drupal.org/project/commerce_ogone'),
             '@install_path' => 'sites/all/libraries/ogone',
           )
         ),
