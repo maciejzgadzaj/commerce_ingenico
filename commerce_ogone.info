@@ -10,8 +10,6 @@ dependencies[] = commerce_payment_ui
 dependencies[] = commerce_cart
 dependencies[] = commerce_checkout
 dependencies[] = commerce_order_ui
-dependencies[] = currency
-dependencies[] = commerce_multicurrency
 
 core = 7.x
 configure = admin/commerce/config/payment-methods

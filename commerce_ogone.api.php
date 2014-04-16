@@ -62,8 +62,9 @@ class OgoneApi {
   public function directPayments($customer_profile, $order, $card_info, $type = 'SAL', $amount = '') {
     global $base_root;
     $site_name = variable_get('site_name');
-    $currency = currency_load(empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code );
-    $currency_code = $currency->ISO4217Code;
+    //$currency = currency_load(empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code );
+    //$currency_code = $currency->ISO4217Code;
+    $currency_code = empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code;
     $charge_amount = empty($amount->amount) ? $order->commerce_order_total['und'][0]['amount'] : $amount->amount;
 
     $payment_methods = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
