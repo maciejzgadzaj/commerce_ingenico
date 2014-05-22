@@ -582,7 +582,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
   );
-  if ($settings['3d_secure'] == 1) {
+  if (!empty($settings['3d_secure']) and $settings['3d_secure'] == 1) {
     $data['WIN3DS'] = 'MAINW';
     $data['FLAG3D'] = 'Y';
   }
