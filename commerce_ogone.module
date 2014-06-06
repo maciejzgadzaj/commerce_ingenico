@@ -405,8 +405,9 @@ function commerce_ogone_settings_form($settings = NULL) {
       '#title' => t('3D Secure security check of customers cards.'),
       '#default_value' => !empty($settings['3d_secure']) ? $settings['3d_secure'] : '0',
       '#options' => array(
-        '0' => t('Do not perform 3D-Secure checks and always authorise.'),
-        '1' => t('Allways require authentication.'),
+        '0' => t('Allways require authentication.'),
+        '1' => t('Do not perform 3D-Secure checks and always authorise.'),
+
       ),
     );
   }
