@@ -14,31 +14,3 @@ function commerce_ogone_example_views_api() {
     'path' => drupal_get_path('module', 'commerce_ogone_example') . '/includes/views',
   );
 }
-
-/**
- * Update the status of all captured transactions outside of Drupal.
- */
-function commerce_ogone_example_query($transaction) {
-  $api = commerce_ogone_api_object();
-  $pay_id = explode('/', $transaction->remote_id);
-  $sub_id = !empty($pay_id[1]) ? $pay_id[1] : '';
-  $result = $api->query($transaction, $pay_id[0], $sub_id, $sub_id);
-  $data = $api->get_response_data($result->data);
-  switch ($data['STATUS']) {
-    case '91':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
-      commerce_payment_transaction_save($transaction);
-    break;
-    case '9':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
-      commerce_payment_transaction_save($transaction);
-    break;
-    case '61':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CANCELED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
-      commerce_payment_transaction_save($transaction);
-    break;
-  }
-}

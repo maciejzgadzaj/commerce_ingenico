@@ -9,7 +9,7 @@
 /**
  * Implements hook_rules_action_info().
  */
-function commerce_ogone_example_rules_action_info() {
+function commerce_ogone_rules_action_info() {
   $actions = array();
 
   $actions['perform_query'] = array(
@@ -22,7 +22,7 @@ function commerce_ogone_example_rules_action_info() {
     ),
     'group' => t('Commerce'),
     'callbacks' => array(
-      'execute' => 'commerce_ogone_example_query',
+      'execute' => 'commerce_ogone_query_update',
     ),
   );
 
