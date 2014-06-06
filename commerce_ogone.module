@@ -412,9 +412,10 @@ function commerce_ogone_settings_form($settings = NULL) {
     );
   }
 
+  /*
   if (strstr(current_path(), 'ogone_direct')) {
     $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
-  }
+  }*/
 
   $form['transaction_type_process'] = array(
     '#type' => 'radios',
