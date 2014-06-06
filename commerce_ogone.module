@@ -421,7 +421,7 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#title' => t('Transaction capture method'),
     '#default_value' => empty($settings['transaction_type_process']) ? 'sale' : $settings['transaction_type_process'],
     '#options' => array(
-      'sale' => t('Authomatic'),
+      'sale' => t('Automatic'),
       'capture_manual' => t('Manual'),
     ),
   );
