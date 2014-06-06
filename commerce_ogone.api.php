@@ -97,7 +97,7 @@ class OgoneApi {
       );
 
    //3d secure check.
-    if ($payment_methods['settings']['3d_secure'] == 1) {
+    if ($payment_methods['settings']['3d_secure'] == 0) {
       $billing_data['FLAG3D'] = 'Y';
       $billing_data['HTTP_ACCEPT'] = $_SERVER['HTTP_ACCEPT'];
       $billing_data['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];

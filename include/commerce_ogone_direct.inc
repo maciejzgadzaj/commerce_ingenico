@@ -138,7 +138,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
   // drupal_goto('commerce_ogone/test/test', array( 'result' => $result));
   $data = $api->get_response_data($result->data);
 
-  if ($payment_method['settings']['3d_secure'] == 1 and $data['STATUS'] == '5') {
+  if ($payment_method['settings']['3d_secure'] == 0 and $data['STATUS'] == '5') {
     //Delete the transaction on Ogone site.
 
     drupal_goto('commerce_ogone/3ds/callback', array('query' => array(
