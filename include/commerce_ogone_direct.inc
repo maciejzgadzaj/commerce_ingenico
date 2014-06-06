@@ -182,12 +182,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
     //$transaction->message = 'Payment requested';
     $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
-    if ($payment_method['settings']['transaction_type_process'] == 'capture_manual') {
-      $transaction->message = 'Payment requested';
-    }
-    else {
-      $transaction->message = 'Payment requested';
-    }
+    $transaction->message = commerce_ogone_status_messages($data['STATUS']);
     commerce_payment_transaction_save($transaction);
   }
   else {
@@ -196,7 +191,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
     $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
     $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
-    $transaction->message = $data['NCERRORPLUS'];
+    $transaction->message = commerce_ogone_status_messages($data['STATUS']);
     $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
 
     commerce_payment_transaction_save($transaction);

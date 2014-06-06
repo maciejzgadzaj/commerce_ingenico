@@ -27,17 +27,17 @@ function commerce_ogone_example_query($transaction) {
   switch ($data['STATUS']) {
     case '91':
       $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = t('Captured remotely');
+      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
     break;
     case '9':
       $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = t('Captured remotely');
+      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
     break;
     case '61':
       $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CANCELED;
-      $transaction->message = t('Deleted remotely');
+      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
     break;
   }

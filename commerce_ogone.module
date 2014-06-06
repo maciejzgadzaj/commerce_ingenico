@@ -216,12 +216,7 @@ function commerce_ogone_3d_secure_callback() {
     $transaction->payment_method = 'ogone_direct';
     $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
     $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
-    if ($payment_method['settings']['transaction_type_process'] == 'capture_manual') {
-      $transaction->message = 'Payment requested';
-    }
-    else {
-      $transaction->message = 'Payment requested';
-    }
+    $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
     $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
     $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
@@ -766,7 +761,7 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback, 
   $transaction->payment_method = 'ogone_offsite';
   $transaction->remote_status = $feedback['STATUS'];
   $transaction->status =  ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-  $transaction->message = $payment_status['message'];
+  $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
   $transaction->payload = $feedback;
   commerce_payment_transaction_save($transaction);
   if ($redirect) {
