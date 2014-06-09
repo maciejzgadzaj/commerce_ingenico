@@ -159,26 +159,34 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     $query_data = $api->get_response_data($query_return->data);
     if ($query_data['NCERROR'] != 0) {
       if (strstr($query_data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
-        watchdog('commerce_ogone', "The IP address from which a request was sent is not an IP address the
-                  merchant had entered in the IP address field of the Data and origin verification tab.
-                  Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+        if ($payment_method['settings']['logs'] == 0) {
+          watchdog('commerce_ogone', "The IP address from which a request was sent is not an IP address the
+                    merchant had entered in the IP address field of the Data and origin verification tab.
+                    Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+        }
         drupal_set_message('The IP address from which a request was sent is not an IP address the
                   merchant had entered in the IP address field of the Data and origin verification tab.
                   Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.', 'error');
         return FALSE;
       }
       elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/1/s')) {
-        watchdog('commerce_ogone', "The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        if ($payment_method['settings']['logs'] == 0) {
+          watchdog('commerce_ogone', "The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        }
         drupal_set_message(t('The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
         return FALSE;
       }
       elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/0/s')) {
-        watchdog('commerce_ogone', "The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        if ($payment_method['settings']['logs'] == 0) {
+          watchdog('commerce_ogone', "The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        }
         drupal_set_message(t('The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
         return FALSE;
       }
       else {
-        watchdog('commerce_ogone', "There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: %message", array('%message' => $query_data['NCERRORPLUS']), WATCHDOG_ERROR);
+        if ($payment_method['settings']['logs'] == 0) {
+          watchdog('commerce_ogone', "There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: %message", array('%message' => $query_data['NCERRORPLUS']), WATCHDOG_ERROR);
+        }
         drupal_set_message(t('There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: @message', array('@message' => $query_data['NCERRORPLUS'])), 'error');
         return FALSE;
       }

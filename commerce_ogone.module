@@ -460,6 +460,18 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
   );
 
+  $form['logs'] = array(
+    '#type' => 'select',
+    '#title' => t('Logs an issue'),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'logs')),
+    '#options' => array(
+       '0' => 'Always log an issue',
+       '1' => 'Never log issues',
+     ),
+    '#default_value' => $default_language_code,
+    '#description' => t(''),
+  );
+
   //Hidden form element for initial validation.
   $form['validate'] = array(
     '#type' => 'hidden',
