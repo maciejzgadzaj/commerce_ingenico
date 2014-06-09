@@ -72,6 +72,13 @@ class OgoneApi {
     //Get the hash algorithm.
     $sha_composer = self::prepare_phrase_to_hash('sha_in');
 
+    if ($customer_profile[0]->commerce_customer_address['und'][0]['name_line'] != $card_info['credit_card']['owner']) {
+      $card_owner_name = $card_info['credit_card']['owner'];
+    }
+    else {
+      $card_owner_name = $customer_profile[0]->commerce_customer_address['und'][0]['name_line'];
+    }
+
     //All of the billing data needed for the request.
     $billing_data = array(
       'PSPID' => trim($this->merchant_id),
@@ -83,7 +90,7 @@ class OgoneApi {
       'CARDNO' => trim($card_info['credit_card']['number']),
       'ED' => trim($card_info['credit_card']['exp_month'] . substr($card_info['credit_card']['exp_year'], 2, 4)),
       'COM' => trim(t('Order')),
-      'CN' =>  trim($customer_profile[0]->commerce_customer_address['und'][0]['name_line']),
+      'CN' =>  trim($card_owner_name),
       'EMAIL' => trim($order->mail),
       'CVC' => trim($card_info['credit_card']['code']),
       'OWNERADDRESS' => trim($customer_profile[0]->commerce_customer_address['und'][0]['thoroughfare']),

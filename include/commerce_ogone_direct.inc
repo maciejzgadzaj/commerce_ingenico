@@ -19,10 +19,21 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
   $credit_card_settings = array(
     'type'       => $cards_id,
     'code'       => 'CVV/CV2',
+    'owner' => '',
   );
 
   $form = commerce_payment_credit_card_form($credit_card_settings);
+  $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $form['credit_card']['type']['#options'] = $card_types;
+  $form['credit_card']['owner'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Card owner'),
+    '#default_value' => $customer_profile->commerce_customer_address['und'][0]['name_line'],
+    '#attributes' => array('autocomplete' => 'off'),
+    '#required' => FALSE,
+    '#maxlength' => 64,
+    '#size' => 32,
+  );
 
   return $form;
 }
