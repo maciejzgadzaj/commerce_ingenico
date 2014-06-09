@@ -64,7 +64,7 @@ function commerce_payment_credit_card_validate_bc($card_type) {
   //Check the card number.
   $first_int = intval(substr($card_type['number'], 0, 8));
   $second_int = intval(substr($card_type['number'], 8, 16));
-  if (strlen($card_type['number']) == 16 and is_int($first_int) and $first_int > 0 and is_int($second_int) and $second_int > 0) {
+  if ($card_type['type'] === 'bancontact/mistercash' and (strlen($card_type['number']) == 16 and is_int($first_int) and $first_int > 0 and is_int($second_int) and $second_int > 0)) {
     if (substr($first_int, 0, 4) == 6573 and substr($first_int, -4, 8) >= 0300 and substr($first_int, -4, 8) <= 5099) {
        drupal_set_message(t('test card inside'), 'status');
       $return = TRUE;
@@ -100,13 +100,13 @@ function commerce_payment_credit_card_validate_bc($card_type) {
     }
     else {
       $return = 'Invalid card number';
-      drupal_set_message(t('Invalid card number'), 'error');
+      drupal_set_message(t('Invalid card number1'), 'error');
       return FALSE;
     }
   }
-  else {
+  elseif ($card_type['type'] === 'bancontact/mistercash') {
     $return = 'Invalid card number';
-    drupal_set_message(t('Invalid card number'), 'error');
+    drupal_set_message(t('Invalid card number2'), 'error');
     return FALSE;
   }
 
@@ -124,7 +124,12 @@ function commerce_payment_credit_card_validate_bc($card_type) {
     drupal_set_message(t('You have entered an expired credit card.'), 'error');
     return FALSE;
   }
-  return $return;
+  if (!empty($return)) {
+    return $return;
+  }
+  else {
+    return TRUE;
+  }
 }
 
 /**
@@ -137,7 +142,37 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
   $result = $api->directPayments($customer_profile, $order, $pane_values);
   // drupal_goto('commerce_ogone/test/test', array( 'result' => $result));
   $data = $api->get_response_data($result->data);
-
+  if ($data['NCERROR'] != 0) {
+    $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+    $query_return = $api->query($transaction, $data['PAYID'], $sub_id = '', $order = '');
+    $query_data = $api->get_response_data($query_return->data);
+    if ($query_data['NCERROR'] != 0) {
+      if (strstr($query_data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
+        watchdog('commerce_ogone', "The IP address from which a request was sent is not an IP address the
+                  merchant had entered in the IP address field of the Data and origin verification tab.
+                  Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+        drupal_set_message('The IP address from which a request was sent is not an IP address the
+                  merchant had entered in the IP address field of the Data and origin verification tab.
+                  Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.', 'error');
+        return FALSE;
+      }
+      elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/1/s')) {
+        watchdog('commerce_ogone', "The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        drupal_set_message(t('The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
+        return FALSE;
+      }
+      elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/0/s')) {
+        watchdog('commerce_ogone', "The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+        drupal_set_message(t('The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
+        return FALSE;
+      }
+      else {
+        watchdog('commerce_ogone', "There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: %message", array('%message' => $query_data['NCERRORPLUS']), WATCHDOG_ERROR);
+        drupal_set_message(t('There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: @message', array('@message' => $query_data['NCERRORPLUS'])), 'error');
+        return FALSE;
+      }
+    }
+  }
   if ($payment_method['settings']['3d_secure'] == 0 and $data['STATUS'] == '5') {
     //Delete the transaction on Ogone site.
 
