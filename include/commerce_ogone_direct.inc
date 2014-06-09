@@ -100,13 +100,13 @@ function commerce_payment_credit_card_validate_bc($card_type) {
     }
     else {
       $return = 'Invalid card number';
-      drupal_set_message(t('Invalid card number1'), 'error');
+      drupal_set_message(t('Invalid card number'), 'error');
       return FALSE;
     }
   }
   elseif ($card_type['type'] === 'bancontact/mistercash') {
     $return = 'Invalid card number';
-    drupal_set_message(t('Invalid card number2'), 'error');
+    drupal_set_message(t('Invalid card number'), 'error');
     return FALSE;
   }
 
