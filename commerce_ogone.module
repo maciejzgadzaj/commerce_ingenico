@@ -157,6 +157,20 @@ function commerce_ogone_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $rule = rules_config_load('commerce_payment_ogone_direct');
+  if ($rule->active == 1) {
+    //Menu item for the batch process.
+    $items['admin/commerce/orders/batch'] = array(
+      'title' => 'Ogone capture',
+      'description' => 'Capture all pending transactions with batch process',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_ogone_batch_form'),
+      'access callback' => TRUE,
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 100,
+    );
+  }
+
   return $items;
 }
 
@@ -182,6 +196,146 @@ function commerce_ogone_menu_alter(&$items) {
   );
 
 //  return $items;
+}
+
+function commerce_ogone_batch_form($form, &$form_state) {
+  $form['capture_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#description' => 'Capture all pending transactions',
+    '#title' => 'Capture',
+  );
+
+  $form['hidden_value'] = array(
+    '#type' => 'hidden',
+    '#value' => 1,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#description' => 'Capture all pending transactions',
+    '#value' => 'Capture'
+  );
+
+  return $form;
+}
+
+function commerce_ogone_batch_form_submit($form, &$form_state) {
+  if ($form_state['values']['hidden_value'] == 1) {
+    $_SESSION['http_request_count'] = 0;
+    $batch = commerce_ogone_batch_process();
+    batch_set($batch);
+  }
+}
+
+
+function commerce_ogone_batch_process() {
+  $all_transactions = commerce_ogone_load_all_pending_transactions();
+  $num_operations = 1000;
+  $operations = array();
+  foreach ($all_transactions as $key => $value) {
+    $transaction_id = $value->transaction_id;
+
+    $operations[] = array(
+      'commerce_ogone_batch_operation',
+      array(
+        $transaction_id,
+        t('(Operation @operation)', array('@operation' => $key)),
+      ),
+    );
+  }
+
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'commerce_ogone_batchs_finished',
+  );
+
+  return $batch;
+}
+
+function commerce_ogone_batch_operation($transaction_id, $operation_details, &$context) {
+  $transaction = commerce_ogone_load_all_pending_transactions($transaction_id);
+  $transaction = reset($transaction);
+  $order = commerce_order_load($transaction->order_id);
+
+  $context['message'] = t('Process transactions "@title"', array('@title' => $transaction->payment_method)) . ' ' . $operation_details;
+
+  $api = commerce_ogone_api_object();
+  $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
+  $context['results'][] = $result;
+  $_SESSION['http_request_count']++;
+}
+
+/**
+ * Batch 'finished' callback.
+ */
+function commerce_ogone_batchs_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
+    //Update database.
+    foreach ($results as $key => $value) {
+      $result = $value;
+      variable_set('result', $result);
+      $api = commerce_ogone_api_object();
+      $data = $api->get_response_data($result->data);
+      $order_ids = $data['orderID'];
+      $order_id = explode('-', $order_ids);
+      $transaction = commerce_ogone_load_all_pending_transactions($transaction_id = '', $order_id[0]);
+      $transaction = reset($transaction);
+      $order = commerce_order_load($order_id[0]);
+      $order = reset($order);
+      if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
+        $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
+        $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+        $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+        commerce_payment_transaction_save($transaction);
+      }
+      elseif ($data['NCERROR'] == '50001127') {
+        $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
+        $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+        $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+        commerce_payment_transaction_save($transaction);
+        drupal_set_message('This order has been captured previously.');
+      }
+      else {
+        drupal_set_message(t('The operation was not successful.'), 'error');
+      }
+    }
+
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(
+      t('An error occurred while processing @operation with arguments : @args',
+        array(
+          '@operation' => $error_operation[0],
+          '@args' => print_r($error_operation[0], TRUE),
+        )
+      )
+    );
+  }
+}
+
+function commerce_ogone_load_all_pending_transactions($transaction_id = '', $order_id = '') {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_payment_transaction')
+  ->propertyCondition('status', 'pending');
+  if (!empty($transaction_id)) {
+    $query->propertyCondition('transaction_id', $transaction_id);
+  }
+  elseif (!empty($order_id)) {
+    $query->propertyCondition('order_id', $order_id);
+  }
+  $query->propertyOrderBy('transaction_id', 'DESC');
+  $return = array();
+  $result = $query->execute();
+    if (!empty($result['commerce_payment_transaction'])) {
+    foreach ($result['commerce_payment_transaction'] as $transaction_id) {
+      $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
+    }
+  }
+  return $return;
 }
 
 /**
