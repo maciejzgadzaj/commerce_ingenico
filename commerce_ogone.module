@@ -9,6 +9,16 @@ define('COMMERCE_PAYMENT_STATUS_OGONE_REFUND', 'REFUNDED');
 define('COMMERCE_PAYMENT_STATUS_OGONE_CANCELED', 'CANCELED');
 
 /**
+ * Implements hook_views_api().
+ */
+function commerce_ogone_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_ogone') . '/include/views',
+  );
+}
+
+/**
  * Implements hook_libraries_info().
  */
 function commerce_ogone_libraries_info() {
