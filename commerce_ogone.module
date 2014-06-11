@@ -796,6 +796,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'CURRENCY' => $currency_code,
     'LANGUAGE' => _commerce_ogone_get_language_code($settings),
     'CN' => $customer_name,
+    'ORIG' => 'OGDC140415',
     'EMAIL' => $order->mail,
     // Layout
     'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),

@@ -101,6 +101,7 @@ class OgoneApi {
       'REMOTE_ADDR' => ip_address(),
       'RTIMEOUT' => trim(30),
       'ECI' => trim('7'),
+      'ORIG' => 'OGDC140415',
       );
 
    //3d secure check.
