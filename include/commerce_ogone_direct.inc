@@ -30,7 +30,7 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
     '#title' => t('Card owner'),
     '#default_value' => $customer_profile->commerce_customer_address['und'][0]['name_line'],
     '#attributes' => array('autocomplete' => 'off'),
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#maxlength' => 64,
     '#size' => 32,
   );

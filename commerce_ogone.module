@@ -158,7 +158,7 @@ function commerce_ogone_menu() {
   );
 
   $rule = rules_config_load('commerce_payment_ogone_direct');
-  if ($rule->active == 1) {
+  if (!empty($rule) and $rule->active == 1) {
     //Menu item for the batch process.
     $items['admin/commerce/orders/batch'] = array(
       'title' => 'Ogone capture',

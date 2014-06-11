@@ -45,6 +45,3 @@ function commerce_ogone_rules_action_info() {
 
   return $actions;
 }
-
-  return $actions;
-}
