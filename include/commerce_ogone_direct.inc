@@ -237,6 +237,8 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     //$transaction->message = 'Payment requested';
     $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
     $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+    $transaction->remote_status = $data['STATUS'];
+    $transaction->payload = $data;
     commerce_payment_transaction_save($transaction);
   }
   else {
@@ -247,7 +249,8 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
     $transaction->message = commerce_ogone_status_messages($data['STATUS']);
     $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
-
+    $transaction->remote_status = $data['STATUS'];
+    $transaction->payload = $data;
     commerce_payment_transaction_save($transaction);
   }
   $payment_methods = commerce_payment_method_instance_load('ogone_onsite|commerce_payment_ogone_onsite');

@@ -221,6 +221,9 @@ function commerce_ogone_batch_rule($date) {
     drupal_form_submit('commerce_ogone_batch_form', $form_state);
 }
 
+/**
+ * Form for the batch process.
+ */
 function commerce_ogone_batch_form($form, &$form_state) {
   $form['capture_fieldset'] = array(
     '#type' => 'fieldset',
@@ -251,6 +254,9 @@ function commerce_ogone_batch_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * If the form is submited start the batch process.
+ */
 function commerce_ogone_batch_form_submit($form, &$form_state) {
   $date = $form_state['values']['date'];
   if (is_numeric($form_state['values']['date']) != TRUE) {
@@ -264,7 +270,9 @@ function commerce_ogone_batch_form_submit($form, &$form_state) {
   }
 }
 
-
+/**
+ * Batch process.
+ */
 function commerce_ogone_batch_process($date = '') {
   if (!empty($date)) {
     $all_transactions = commerce_ogone_load_all_pending_transactions($date);
@@ -294,6 +302,9 @@ function commerce_ogone_batch_process($date = '') {
   return $batch;
 }
 
+/**
+ * Batch operation process.
+ */
 function commerce_ogone_batch_operation($transaction_id, $operation_details, &$context) {
   $transaction = commerce_ogone_load_all_pending_transactions('', $transaction_id);
   $transaction = reset($transaction);
@@ -359,6 +370,9 @@ function commerce_ogone_batchs_finished($success, $results, $operations) {
   }
 }
 
+/**
+ * Loads transactions by date, transaction_id or order_id
+ */
 function commerce_ogone_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
