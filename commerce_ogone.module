@@ -722,9 +722,9 @@ function validate_element($element, $form, &$form_state) {
 
   $data = $api->get_response_data($result->data);
 
-  if ($data['NCERRORPLUS'] === 'The data you entered is not correct. Please retry.') {
+  if ($data['NCERRORPLUS'] === 'The data you entered is not correct. Please retry.' and $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['logs'] == 0) {
     form_error($element, t('Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user).'));
-    //drupal_set_message(t('PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase are required!'), 'error');
+    watchdog('commerce_ogone', "Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user.", array(), WATCHDOG_ERROR);
   }
 
   return TRUE;
@@ -894,8 +894,13 @@ function commerce_ogone_valid_sha_callback($order, $payment_method, $feedback) {
   module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha');
   // Check if the received SHA string is valid
  // $sha_out = $payment_method['settings']['sha_out'];
+  if (empty($payment_method)) {
+    $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+  }
   if (!commerce_ogone_feedback_valid_sha($feedback)) {
-    watchdog('commerce_ogone', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
+    if ($payment_method['settings']['logs'] == 0) {
+      watchdog('commerce_ogone', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
+    }
     return FALSE;
   }
   return TRUE;
@@ -1338,6 +1343,9 @@ function commerce_ogone_capture($transaction, $amount, $order, $payment_method) 
   }
   else {
     drupal_set_message(t('The operation was not successful.'), 'error');
+    if ($payment_method['settings']['logs'] == 0) {
+      watchdog('commerce_ogone', "The operation was not successful. Transaction with id: %id was not captured.", array('%id' => $transaction->transaction_id), WATCHDOG_ERROR);
+    }
     return FALSE;
   }
 }

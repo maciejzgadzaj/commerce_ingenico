@@ -209,6 +209,9 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
   }
 
   if (strstr($data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
+    if ($payment_method['settings']['logs'] == 0) {
+      watchdog('commerce_ogone', "Your IP Address is not set on Ogone site. Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+    }
     $error = 'Your IP Address is not set on Ogone site. Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.';
     drupal_set_message(t('@error', array('@error' => $error)), 'error');
     drupal_goto($base_root);
