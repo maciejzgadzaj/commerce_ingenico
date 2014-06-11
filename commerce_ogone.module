@@ -213,7 +213,6 @@ function commerce_ogone_menu_alter(&$items) {
  */
 function commerce_ogone_batch_rule($date) {
     $_SESSION['http_request_count'] = 0;
-    drupal_set_message(t('date is @date', array('@date' => $date)));
     $form_state = array();
     $form_state['values']['hidden_value'] = 1;
     $form_state['values']['op'] = 'Capture';
