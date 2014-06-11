@@ -198,11 +198,34 @@ function commerce_ogone_menu_alter(&$items) {
 //  return $items;
 }
 
+/**
+ * Mimic batch trigger so it can be triggered when cron runs.
+ */
+function commerce_ogone_batch_rule($date) {
+    $_SESSION['http_request_count'] = 0;
+    drupal_set_message(t('date is @date', array('@date' => $date)));
+    $form_state = array();
+    $form_state['values']['hidden_value'] = 1;
+    $form_state['values']['op'] = 'Capture';
+    $form_state['values']['submit'] = 'Capture';
+    $form_state['values']['date'] = $date;
+    drupal_form_submit('commerce_ogone_batch_form', $form_state);
+}
+
 function commerce_ogone_batch_form($form, &$form_state) {
   $form['capture_fieldset'] = array(
     '#type' => 'fieldset',
     '#description' => 'Capture all pending transactions',
     '#title' => 'Capture',
+  );
+
+  $form['date'] = array(
+    '#type' => 'textfield',
+    '#description' => 'Enter date (like: 16 June 2013), time stamp or days in the past (by giving negative values) like -1 day, -2 days, -3 days … (this will capture all pending transactions from the previous day, 2 days before today or 3 days before today)
+                       or just use “now” to capture all pending transactions from this moment. May use the following format as well: YYYY-MM-DD HH:MM:SS',
+    '#title' => 'Chose a date from which to start capturing transactions.',
+    '#default_value' => 'now',
+    '#required' => TRUE,
   );
 
   $form['hidden_value'] = array(
@@ -220,16 +243,26 @@ function commerce_ogone_batch_form($form, &$form_state) {
 }
 
 function commerce_ogone_batch_form_submit($form, &$form_state) {
+  $date = $form_state['values']['date'];
+  if (is_numeric($form_state['values']['date']) != TRUE) {
+    $date = strtotime($date);
+  }
+
   if ($form_state['values']['hidden_value'] == 1) {
     $_SESSION['http_request_count'] = 0;
-    $batch = commerce_ogone_batch_process();
+    $batch = commerce_ogone_batch_process($date);
     batch_set($batch);
   }
 }
 
 
-function commerce_ogone_batch_process() {
-  $all_transactions = commerce_ogone_load_all_pending_transactions();
+function commerce_ogone_batch_process($date = '') {
+  if (!empty($date)) {
+    $all_transactions = commerce_ogone_load_all_pending_transactions($date);
+  }
+  else {
+    $all_transactions = commerce_ogone_load_all_pending_transactions();
+  }
   $num_operations = 1000;
   $operations = array();
   foreach ($all_transactions as $key => $value) {
@@ -253,7 +286,7 @@ function commerce_ogone_batch_process() {
 }
 
 function commerce_ogone_batch_operation($transaction_id, $operation_details, &$context) {
-  $transaction = commerce_ogone_load_all_pending_transactions($transaction_id);
+  $transaction = commerce_ogone_load_all_pending_transactions('', $transaction_id);
   $transaction = reset($transaction);
   $order = commerce_order_load($transaction->order_id);
 
@@ -317,7 +350,7 @@ function commerce_ogone_batchs_finished($success, $results, $operations) {
   }
 }
 
-function commerce_ogone_load_all_pending_transactions($transaction_id = '', $order_id = '') {
+function commerce_ogone_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
   ->propertyCondition('status', 'pending');
@@ -326,6 +359,9 @@ function commerce_ogone_load_all_pending_transactions($transaction_id = '', $ord
   }
   elseif (!empty($order_id)) {
     $query->propertyCondition('order_id', $order_id);
+  }
+  elseif (!empty($date)) {
+    $query->propertyCondition('created', $date, '<=');
   }
   $query->propertyOrderBy('transaction_id', 'DESC');
   $return = array();

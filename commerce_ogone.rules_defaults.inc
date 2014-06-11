@@ -44,5 +44,18 @@ function commerce_ogone_default_rules_configuration() {
   ));
   $rules['rules_compare_remote_status_with_local'] = $rule;
 
+  //Reaction rule triggered on cron run that captures pending transactions.
+  $rule = rules_reaction_rule();
+  $rule->label = t('Capture transactions on cron run.');
+  $rule->tags = array('Commerce Order');
+  $rule->active = TRUE;
+  $rule
+    ->event('cron')
+    ->action('batch_capture', array(
+      'date' => '-1 day',
+    ));
+
+  $rules['capture_transactions_on_cron_run'] = $rule;
+
   return $rules;
 }
