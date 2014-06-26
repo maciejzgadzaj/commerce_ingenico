@@ -66,6 +66,7 @@ function commerce_ogone_commerce_payment_method_info() {
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
     'active' => FALSE,
+    'file' => 'include/commerce_ogone_direct.inc',
   );
 
   $payment_methods['ogone_direct'] = array(
@@ -181,7 +182,58 @@ function commerce_ogone_menu() {
     );
  // }
 
+  //Define a callback for the callback after the transaction has been proccess with the offsite method,
+  //when the cards were preselected.
+  $items['commerce_ogone/redirect'] = array(
+    'page callback' => 'commerce_ogone_cards_redirect_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
+}
+
+/**
+ * Process the transaction after the redirection for preselected card types.
+ */
+function commerce_ogone_cards_redirect_callback() {
+  global $user, $base_root;
+  $order_id = $_GET['orderID'];
+  $order = explode('-', $order_id);
+
+  $order = commerce_order_load($order[0]);
+  $order->status = 'pending';
+  commerce_order_save($order);
+  $feedback = commerce_ogone_get_feedback();
+  $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+  if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
+    //Store the transaction.
+    if (!empty($order_id)) {
+      $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+      $transaction->uid = $user->uid;
+      $transaction->order_id = $order->order_id;
+      $transaction->payment_method = 'ogone_direct';
+      $transaction->instance_id = 'ogone_offsite|commerce_payment_ogone_offsite';
+      $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+      $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
+      $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
+      $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
+      $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->remote_status = $_GET['STATUS'];
+      $transaction->created = $order->created;
+      $transaction->payload = $feedback;
+      commerce_payment_transaction_save($transaction);
+    }
+    //If successeful operation go to checkout complete.
+    return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
+  }
+  else {
+    drupal_set_message(t('The order# @order was cancelled.', array('@order' => $order->order_id)), 'error');
+    if ($payment_method['settings']['logs'] == 0 ) {
+      watchdog('commerce_ogone', "The order# @order was cancelled.", array('@order' => $order->order_id), WATCHDOG_ERROR);
+    }
+    return drupal_goto($base_root);
+  }
 }
 
 /**
@@ -206,6 +258,21 @@ function commerce_ogone_menu_alter(&$items) {
   );
 
 //  return $items;
+}
+
+/**
+ * Alter the redirect form for the offsite payment method.
+ */
+function commerce_ogone_redirect_alter_form($form, &$form_state, $order) {
+  $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+  $order->data['payment_redirect_key'] = drupal_hash_base64($order->changed);
+  $settings = array(
+    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    'payment_method' => $payment_method['instance_id'],
+  );
+   commerce_payment_redirect_pane_next_page($order);
+   return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
 }
 
 /**
@@ -327,7 +394,6 @@ function commerce_ogone_batchs_finished($success, $results, $operations) {
     //Update database.
     foreach ($results as $key => $value) {
       $result = $value;
-      variable_set('result', $result);
       $api = commerce_ogone_api_object();
       $data = $api->get_response_data($result->data);
       $order_ids = $data['orderID'];
@@ -630,6 +696,16 @@ function commerce_ogone_settings_form($settings = NULL) {
     $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
   }*/
 
+  if (strstr(current_path(), 'ogone_offsite')) {
+    $form['modify_card_types'] = array(
+      '#type' => 'checkbox',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'cardpreselect')),
+      '#title' => t('Preselect payment type.'),
+      '#description' => t('Allows customers to preselect payment type before the actual payment.'),
+      '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
+    );
+  }
+
   $form['transaction_type_process'] = array(
     '#type' => 'radios',
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'transaction')),
@@ -806,6 +882,8 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
+    'PM' => 'CreditCard',
+    'BRAND' => $form_state['value']['type'],
   );
   if (!empty($settings['3d_secure']) and $settings['3d_secure'] == 0) {
     $data['WIN3DS'] = 'MAINW';
@@ -818,6 +896,14 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   elseif ($settings['transaction_type_process'] == 'capture_manual') {
     $data['OPERATION'] = 'RES';
   }
+
+  if ($settings['modify_card_types'] == 1) {
+    $data['ACCEPTURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['DECLINEURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['CANCELURL'] = $base_root . '/commerce_ogone/redirect';
+  }
+
   // Allow modules to add or alter the data sent to Ogone before signing.
   drupal_alter('commerce_ogone_data', $data, $order, $settings);
 
@@ -855,6 +941,16 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     '#type' => 'submit',
     '#value' => t('Proceed with payment'),
   );
+
+  foreach($form as $key => $value) {
+    if($key == '#action' || $key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+         $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' || $key == 'SHASign' || $key == 'submit') {
+      $new_form[$key] = $value;
+    }
+  }
+  //$new_form['#redirect'] = $form['#action'];
+  ksort($new_form);
+  $form = $new_form;
 
   return $form;
 }
