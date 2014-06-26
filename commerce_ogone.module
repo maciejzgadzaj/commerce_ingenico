@@ -696,16 +696,6 @@ function commerce_ogone_settings_form($settings = NULL) {
     $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
   }*/
 
-  if (strstr(current_path(), 'ogone_offsite')) {
-    $form['modify_card_types'] = array(
-      '#type' => 'checkbox',
-      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'cardpreselect')),
-      '#title' => t('Preselect payment type.'),
-      '#description' => t('Allows customers to preselect payment type before the actual payment.'),
-      '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
-    );
-  }
-
   $form['transaction_type_process'] = array(
     '#type' => 'radios',
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'transaction')),
@@ -716,6 +706,31 @@ function commerce_ogone_settings_form($settings = NULL) {
       'capture_manual' => t('Manual'),
     ),
   );
+
+  if (strstr(current_path(), 'ogone_offsite')) {
+    $form['modify_card_types'] = array(
+      '#type' => 'checkbox',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'cardpreselect')),
+      '#title' => t('Preselect payment type.'),
+      '#description' => t('Allows customers to preselect payment type before the actual payment.'),
+      '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
+    );
+  }
+
+  if (strstr(current_path(), 'ogone_offsite') != FALSE) {
+    foreach (commerce_ogone_payment_methods() as $key => $value) {
+      $options[$key] = $value['BRAND'];
+      $default_value[$key] = $key;
+    }
+    $form['payment_method_types'] = array(
+      '#type' => 'checkboxes',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'methodtypes')),
+      '#title' => 'Payment method types',
+      '#description' => t('Select payment methods that will be available.'),
+      '#options' => $options,
+      '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
+    );
+  }
 
   $form['language_list'] = array(
     '#type' => 'fieldset',
@@ -882,7 +897,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
-    'PM' => 'CreditCard',
+    'PM' => $form_state['value']['PM'],
     'BRAND' => $form_state['value']['type'],
   );
   if (!empty($settings['3d_secure']) and $settings['3d_secure'] == 0) {
@@ -1519,5 +1534,105 @@ function commerce_ogone_status_messages($status) {
   if (!empty($codes[$status])) {
     return $codes[$status];
   }
+
+}
+
+/**
+ * Return all payment methods.
+ */
+function commerce_ogone_payment_methods() {
+  return array(
+   'visa' => array(
+     'PM' => 'CreditCard',
+     'BRAND' => t('Visa'),
+    ),
+    'mastercard' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('MasterCard'),
+    ),
+    'amex' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('American Express'),
+    ),
+    //'discover' => t('Discover Card'),
+    'dc' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t("Diners Club"),
+    ),
+    //'dci' => t("Diners Club International"),
+    //'cb' => t("Carte Blanche"),
+    'jcb' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('JCB'),
+    ),
+    'maestro' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Maestro'),
+    ),
+    //'visaelectron' => t('Visa Electron'),
+    //'laser' => t('Laser'),
+    //'solo' => t('Solo'),
+    //'switch' => t('Switch'),
+    'airplus' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('AIRPLUS'),
+    ),
+    'aurora' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Aurora'),
+    ),
+    'aurore' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Aurore'),
+    ),
+    'billy' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Billy'),
+    ),
+    'cb' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('CB'),
+    ),
+    'cofinoga' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Cofinoga'),
+    ),
+    'cb' => array(
+      'dankort' => 'CreditCard',
+      'BRAND' => t('Dankort'),
+    ),
+    'laser' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Laser'),
+    ),
+    'maestrouk' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('MaestroUK'),
+    ),
+    'solo' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Solo'),
+    ),
+    'uatp' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('UATP'),
+    ),
+    'bcmc' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('BCMC'),
+    ),
+    'netreserve' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('NetReserve'),
+    ),
+    'privilege' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('PRIVILEGE'),
+    ),
+    'paypal' => array(
+      'PM' => 'PAYPAL',
+      'BRAND' => t('PAYPAL'),
+    ),
+  );
 
 }

@@ -10,10 +10,16 @@
  */
 function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
   if ($payment_method['method_id'] == 'ogone_offsite' && $payment_method['settings']['modify_card_types'] === 1) {
+    $all_payment_methods = commerce_ogone_payment_methods();
+    foreach ($payment_method['settings']['payment_method_types'] as $key => $value) {
+      if (!empty($value)) {
+        $cards[$key] = $all_payment_methods[$key]['BRAND'];
+      }
+    }
     $form['credit_card']['type'] = array(
       '#type' => 'select',
       '#title' => t('Card type'),
-      '#options' => commerce_ogone_direct_all_card_names(),
+      '#options' => $cards,
     );
     return $form;
   }
@@ -164,6 +170,11 @@ function commerce_payment_credit_card_validate_bc($payment_method, $card_type) {
 function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
   if ($payment_method['method_id'] == 'ogone_offsite' && $payment_method['settings']['modify_card_types'] == 1) {
     $form_state['value']['type'] = $pane_values['credit_card']['type'];
+    foreach (commerce_ogone_payment_methods() as $key => $value) {
+      if ($key == $form_state['value']['type']) {
+        $form_state['value']['PM'] = $value['PM'];
+      }
+    }
     $result = commerce_ogone_redirect_alter_form($pane_form, $form_state, $order);
     foreach($result as $key => $value) {
       if($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
@@ -309,3 +320,4 @@ function commerce_ogone_customer_profile_load($profile_id) {
   }
   return $return;
 }
+
