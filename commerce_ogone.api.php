@@ -97,7 +97,7 @@ class OgoneApi {
       'OWNERZIP' => trim($customer_profile[0]->commerce_customer_address['und'][0]['postal_code']),
       'OWNERTOWN' => trim($customer_profile[0]->commerce_customer_address['und'][0]['dependent_locality']),
       'OWNERCTY' => trim($customer_profile[0]->commerce_customer_address['und'][0]['country']),
-      'OPERATION' => ($payment_methods['settings']['transaction_type_process'] == 'capture_manual') ? trim('RES') : trim($type),
+      'OPERATION' => (!empty($payment_methods['settings']['transaction_type_process']) and $payment_methods['settings']['transaction_type_process'] == 'sale') ? 'VEN' : '', //($payment_methods['settings']['transaction_type_process'] == 'capture_manual') ? trim('RES') : trim($type),
       'REMOTE_ADDR' => ip_address(),
       'RTIMEOUT' => trim(30),
       'ECI' => trim('7'),
@@ -150,7 +150,7 @@ class OgoneApi {
       'PAYID' => trim($transaction->remote_id),
       'AMOUNT' => empty($amount->amount) ? $transaction->amount : $amount->amount,
       'CURRENCY' => $transaction->currency_code,
-      'OPERATION' => empty($type) ? 'SAL' : trim($type),
+      'OPERATION' => empty($type) ? 'VEN' : trim($type),
     );
     if (!empty($sub_id)) {
       $billing_data['PAYIDSUB'] = $sub_id;
