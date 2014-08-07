@@ -18,9 +18,23 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
     }
     $form['credit_card']['type'] = array(
       '#type' => 'select',
-      '#title' => t('Card type'),
+      '#title' => t('Payment method'),
       '#options' => $cards,
     );
+
+    /*if ($payment_method['method_id'] == 'ogone_offsite') {
+      $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
+      $form['credit_card']['owner'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Card owner'),
+        '#default_value' => $customer_profile->commerce_customer_address['und'][0]['name_line'],
+        '#attributes' => array('autocomplete' => 'off'),
+        '#required' => TRUE,
+        '#maxlength' => 64,
+        '#size' => 32,
+      );
+    }*/
+
     return $form;
   }
   elseif ($payment_method['method_id'] == 'ogone_direct') {
@@ -168,21 +182,25 @@ function commerce_payment_credit_card_validate_bc($payment_method, $card_type) {
  * Submit the payment request.
  */
 function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
-  if ($payment_method['method_id'] == 'ogone_offsite' && $payment_method['settings']['modify_card_types'] == 1) {
-    $form_state['value']['type'] = $pane_values['credit_card']['type'];
+  global $base_root;
+  if ($payment_method['method_id'] == 'ogone_offsite' /*&& $payment_method['settings']['modify_card_types'] == 1*/) {
+    if (!empty($pane_values['credit_card']['type'])) {
+      $form_state_value['value']['type'] = $pane_values['credit_card']['type'];
+
     foreach (commerce_ogone_payment_methods() as $key => $value) {
-      if ($key == $form_state['value']['type']) {
-        $form_state['value']['PM'] = $value['PM'];
+      if ($key == $form_state_value['value']['type']) {
+        $form_state_value['value']['PM'] = $value['PM'];
       }
     }
-    $result = commerce_ogone_redirect_alter_form($pane_form, $form_state, $order);
+  }
+    $result = commerce_ogone_redirect_alter_form($pane_form, $form_state_value, $order);
     foreach($result as $key => $value) {
       if($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
            $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' || $key == 'SHASign') {
            $new_form[$key] = $value['#value'];
       }
     }
-    //commerce_payment_redirect_pane_next_page($order);
+
     drupal_goto($result['#action'], array('query' => $new_form));
   }
   else {
@@ -235,19 +253,19 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
       //Delete the transaction on Ogone site.
 
       drupal_goto('commerce_ogone/3ds/callback', array('query' => array(
-        'STATUS' => $data['STATUS'],
-        'PAYID' => $data['PAYID'],
-        'ORDERID' => $order->order_id,
+        'STATUS' => !empty($data['STATUS']) ? $data['STATUS'] : '',
+        'PAYID' => !empty($data['PAYID']) ? $data['PAYID'] : '',
+        'ORDERID' => !empty($order->order_id) ? $order->order_id : '',
         '3D' => 'failed',
-        'REMOTE_ORDER_ID' => $data['orderID'],
-        'NCERROR' => $data['NCERROR'],
-        'NCSTATUS' => $data['NCSTATUS'],
-        'NCERRORPLUS' => $data['NCERRORPLUS'],
+        'REMOTE_ORDER_ID' => !empty($data['orderID']) ? $data['orderID'] : '',
+        'NCERROR' => !empty($data['NCERROR']) ? $data['NCERROR'] : '',
+        'NCSTATUS' => !empty($data['NCSTATUS']) ? $data['NCSTATUS'] : '',
+        'NCERRORPLUS' => !empty($data['NCERRORPLUS']) ? $data['NCERRORPLUS'] : '',
         )
       ));
     }
 
-    if (strstr($data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
+    if (!empty($data['NCERRORPLUS']) and strstr($data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
       if ($payment_method['settings']['logs'] == 0) {
         watchdog('commerce_ogone', "Your IP Address is not set on Ogone site. Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
       }

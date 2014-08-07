@@ -7,7 +7,7 @@ INSTALLATION INSTRUCTIONS FOR COMMERCE OGONE
 
 First you should make sure you have an Ogone Merchant account, and are ready to configure it:
 
-Configuring Ogone
+Configuring Goon
 ------------------
 - Log in with your Ogone merchant account to the test or prod environment
   (depending on which you'd like to configure)
@@ -43,6 +43,11 @@ Configuring Ogone
 
 Installing & configuring the Ogone payment method in Drupal Commerce
 ---------------------------------------------------------------------
+- Before installing the module you need to download a library that is needed for the module to works, this library is available on github:
+https://github.com/marlon-be/marlon-ogone
+Download zip:
+https://github.com/marlon-be/marlon-ogone/archive/master.zip
+- You should also enable library module.
 - Enable the module (Go to admin/modules and search in the Commerce (Contrib) fieldset).
 - Go to Administration > Store > Configuration > Payment Methods
 - Here you can enable either one of the payment methods (Ingenico online gateway: hosted payment methods or Ingenico direct gateway - a direct payment method) or both of them.

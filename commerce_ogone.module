@@ -198,7 +198,12 @@ function commerce_ogone_menu() {
  */
 function commerce_ogone_cards_redirect_callback() {
   global $user, $base_root;
-  $order_id = $_GET['orderID'];
+  if (empty($_POST['orderID'])) {
+    $order_id = $_GET['orderID'];
+  }
+  else {
+    $order_id = $_POST['orderID'];
+  }
   $order = explode('-', $order_id);
 
   $order = commerce_order_load($order[0]);
@@ -209,10 +214,10 @@ function commerce_ogone_cards_redirect_callback() {
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
     //Store the transaction.
     if (!empty($order_id)) {
-      $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+      $transaction = commerce_payment_transaction_new('ogone_offsite', $order->order_id);
       $transaction->uid = $user->uid;
       $transaction->order_id = $order->order_id;
-      $transaction->payment_method = 'ogone_direct';
+      $transaction->payment_method = 'ogone_offsite';
       $transaction->instance_id = 'ogone_offsite|commerce_payment_ogone_offsite';
       $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
       $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
@@ -390,7 +395,7 @@ function commerce_ogone_batch_operation($transaction_id, $operation_details, &$c
  */
 function commerce_ogone_batchs_finished($success, $results, $operations) {
   if ($success) {
-    drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
+    //drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
     //Update database.
     foreach ($results as $key => $value) {
       $result = $value;
@@ -472,6 +477,7 @@ function commerce_ogone_3d_secure() {
   if (strstr($decode_page, '&#58;') != FALSE) {
     $form_redirect = str_replace('&#58;', ':', $decode_page);
   }
+
   return $form_redirect;
 }
 
@@ -480,7 +486,12 @@ function commerce_ogone_3d_secure() {
  */
 function commerce_ogone_3d_secure_callback() {
   global $user, $base_root;
-  $order_id = $_GET['ORDERID'];
+  if (empty($_POST['ORDERID'])) {
+    $order_id = $_GET['ORDERID'];
+  }
+  else {
+    $order_id = $_POST['ORDERID'];
+  }
   $order = commerce_order_load($order_id);
   $order->status = 'pending';
   commerce_order_save($order);
@@ -494,28 +505,28 @@ function commerce_ogone_3d_secure_callback() {
     $transaction->order_id = $order->order_id;
     $transaction->payment_method = 'ogone_direct';
     $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
-    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : $_POST['PAYID'];
     $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
     $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
     $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-    $transaction->remote_status = $_GET['STATUS'];
+    $transaction->remote_status = $feedback['STATUS'];
     $transaction->created = $order->created;
     $transaction->payload = $feedback;
     commerce_payment_transaction_save($transaction);
   }
 
   //Check if the 3d secure has faild.
-  if (!empty($_GET['3D']) and $_GET['3D'] == 'failed') {
-    if ( $payment_method['settings']['3d_secure'] == 2 and $_GET['NCSTATUS'] == 0 and $_GET['NCERROR'] == 0) {
+  if ((!empty($_GET['3D']) and $_GET['3D'] == 'failed') or (!empty($_POST['3D']) and $_POST['3D'] == 'failed')) {
+    if ( $payment_method['settings']['3d_secure'] == 2 and $feedback['NCSTATUS'] == 0 and $feedback['NCERROR'] == 0) {
       drupal_set_message(t('Your transaction was accepted!'), 'status');
       return drupal_goto($base_root);
     }
     else {
       $api = commerce_ogone_api_object();
-      $remote_order_id = $_GET['REMOTE_ORDER_ID'];
+      $remote_order_id = !empty($_GET['REMOTE_ORDER_ID']) ? $_GET['REMOTE_ORDER_ID'] : $_POST['REMOTE_ORDER_ID'];
       $order->order_id = $remote_order_id;
-      $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel', $pay_id = $_GET['PAYID'], $sub_id = '', $amount = '');
+      $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel', $pay_id = $feedback['PAYID'], $sub_id = '', $amount = '');
 
       $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
       commerce_payment_transaction_save($transaction);
@@ -731,6 +742,13 @@ function commerce_ogone_settings_form($settings = NULL) {
       '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
     );
   }
+/*
+  $form['force_direct_sale'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Force sale transactions.'),
+    '#description' => t('Force every transaction to be authorized and captured automatically.'),
+    '#default_value' => !empty($settings['force_direct_sale']) ? $settings['force_direct_sale'] : '',
+  );*/
 
   $form['language_list'] = array(
     '#type' => 'fieldset',
@@ -897,7 +915,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
-    'PM' => $form_state['value']['PM'],
+    'PM' => !empty($form_state['value']['PM']) ? $form_state['value']['PM'] : '',
     'BRAND' => $form_state['value']['type'],
   );
   if (!empty($settings['3d_secure']) and $settings['3d_secure'] == 0) {
@@ -906,13 +924,19 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   }
 
   if ($settings['transaction_type_process'] == 'sale') {
-    $data['OPERATION'] = 'SAL';
+    $data['OPERATION'] = 'VEN';
   }
   elseif ($settings['transaction_type_process'] == 'capture_manual') {
     $data['OPERATION'] = 'RES';
   }
 
   if ($settings['modify_card_types'] == 1) {
+    $data['ACCEPTURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['DECLINEURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['CANCELURL'] = $base_root . '/commerce_ogone/redirect';
+  }
+  else {
     $data['ACCEPTURL'] = $base_root . '/commerce_ogone/redirect';
     $data['DECLINEURL'] = $base_root . '/commerce_ogone/redirect';
     $data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/redirect';

@@ -102,8 +102,10 @@ class OgoneApi {
       'RTIMEOUT' => trim(30),
       'ECI' => trim('7'),
       'ORIG' => 'OGDC140415',
+      'BRAND' => $card_info['credit_card']['type'],
+      'PM' => 'CreditCard',
       );
-
+    //variable_set('billing', $billing_data);
    //3d secure check.
     if ($payment_methods['settings']['3d_secure'] == 0) {
       $billing_data['FLAG3D'] = 'Y';
@@ -115,7 +117,7 @@ class OgoneApi {
       $billing_data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/3ds/callback';
       $billing_data['PARAMPLUS'] = 'ORDERID=' . $order->order_id;
       $billing_data['COMPLUS'] = 'SUCCESS';
-      $billing_data['LANGUAGE'] = $payment_methods['settings']['language_list']['selected'];
+      $billing_data['LANGUAGE'] = $payment_methods['settings']['language_list']['default_language'];
     }
 
     //Hash the sha phrace with the billing data.
