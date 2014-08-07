@@ -23,7 +23,7 @@ function commerce_ogone_requirements($phase) {
       $library_path = $value;
     }
     // Check if the expected library path exists.
-    if (!empty($library_name) and $library_name == 'ogone'  && file_exists($path_ogone) === TRUE ) {
+    if (!empty($library_name) and $library_name == 'ogone' && (file_exists($path_ogone) === TRUE or (!empty($library_path) and file_exists($library_path) == TRUE))) {
       $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
@@ -67,7 +67,7 @@ function commerce_ogone_requirements($phase) {
       );
       return $requirements;
     }
-    elseif (empty($library) or file_exists($path_ogone) != TRUE) {
+    elseif (empty($library) or (file_exists($path_ogone) != TRUE and file_exists($library_path) !== TRUE)) {
       $requirements['ogone'] = array(
         'title' => $t('Ogone PHP library'),
         'description' => $t('Ogone PHP library is required.'),
