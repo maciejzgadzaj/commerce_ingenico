@@ -16,12 +16,12 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
         $cards[$key] = $all_payment_methods[$key]['BRAND'];
       }
     }
+    $cards['other'] = 'Other payment method';
     $form['credit_card']['type'] = array(
       '#type' => 'select',
       '#title' => t('Payment method'),
       '#options' => $cards,
     );
-
     /*if ($payment_method['method_id'] == 'ogone_offsite') {
       $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
       $form['credit_card']['owner'] = array(
@@ -193,6 +193,19 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
       }
     }
   }
+
+      //Check if the user selected other payment method.
+    /*if ($pane_values['credit_card']['type'] == 'other') {
+      $form_to_submit = array();
+      foreach ($new_form as $k => $v) {
+        if ($k != 'BRAND' and $k != 'PM') {
+          $form_to_submit[$k] = $v;
+        }
+      }
+      $new_form = array();
+      $new_form = $form_to_submit;
+    }*/
+
     $result = commerce_ogone_redirect_alter_form($pane_form, $form_state_value, $order);
     foreach($result as $key => $value) {
       if($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
@@ -201,6 +214,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
       }
     }
 
+    //dsm($pane_values, 'pane'); return false;
     drupal_goto($result['#action'], array('query' => $new_form));
   }
   else {

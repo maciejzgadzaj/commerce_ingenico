@@ -915,9 +915,11 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
-    'PM' => !empty($form_state['value']['PM']) ? $form_state['value']['PM'] : '',
-    'BRAND' => $form_state['value']['type'],
   );
+  if (!empty($form_state['value']['PM']) and !empty($form_state['value']['type']) and $form_state['value']['type'] != 'other') {
+    $data['PM'] = !empty($form_state['value']['PM']) ? $form_state['value']['PM'] : '';
+    $data['BRAND'] = !empty($form_state['value']['type']) ? $form_state['value']['type'] : '';
+  }
   if (!empty($settings['3d_secure']) and $settings['3d_secure'] == 0) {
     $data['WIN3DS'] = 'MAINW';
     $data['FLAG3D'] = 'Y';
@@ -1566,6 +1568,10 @@ function commerce_ogone_status_messages($status) {
  */
 function commerce_ogone_payment_methods() {
   return array(
+    'paypal' => array(
+      'PM' => 'PAYPAL',
+      'BRAND' => t('PAYPAL'),
+    ),
    'visa' => array(
      'PM' => 'CreditCard',
      'BRAND' => t('Visa'),
@@ -1578,30 +1584,168 @@ function commerce_ogone_payment_methods() {
       'PM' => 'CreditCard',
       'BRAND' => t('American Express'),
     ),
-    //'discover' => t('Discover Card'),
-    'dc' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t("Diners Club"),
-    ),
-    //'dci' => t("Diners Club International"),
-    //'cb' => t("Carte Blanche"),
-    'jcb' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('JCB'),
-    ),
     'maestro' => array(
       'PM' => 'CreditCard',
       'BRAND' => t('Maestro'),
     ),
-    //'visaelectron' => t('Visa Electron'),
-    //'laser' => t('Laser'),
-    //'solo' => t('Solo'),
-    //'switch' => t('Switch'),
-    'airplus' => array(
+    'maestrouk' => array(
       'PM' => 'CreditCard',
+      'BRAND' => t('MaestroUK'),
+    ),
+    'bcmc' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('BCMC'),
+    ),
+    'dc' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t("Diners Club"),
+    ),
+    'jcb' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('JCB'),
+    ),
+    'postfinancecard' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('PostFinance Card'),
+    ),
+    '3xcb' => array(
+      'PM' => '3XCB',
+      'BRAND' => t('3XCB'),
+    ),
+    'cofinoga' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Cofinoga'),
+    ),
+    'dankort' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Dankort'),
+    ),
+    'airplus' => array(
+      'PM' => 'PostFinance Card',
       'BRAND' => t('AIRPLUS'),
     ),
-    'aurora' => array(
+    /*Web banking*/
+    'ideal' => array(
+      'PM' => 'iDEAL',
+      'BRAND' => t('iDEAL'),
+    ),
+    'amazoncheckout' => array(
+      'PM' => 'Amazon Checkout',
+      'BRAND' => t('Amazon Checkout'),
+    ),
+    'belfiusdirectnet' => array(
+      'PM' => 'Belfius Direct Net',
+      'BRAND' => t('Belfius Direct Net'),
+    ),
+    'cbconline' => array(
+      'PM' => 'CBC Online',
+      'BRAND' => t('CBC Online'),
+    ),
+    'kbc' => array(
+      'PM' => 'KBC Online',
+      'BRAND' => t('KBC Online'),
+    ),
+    'ing' => array(
+      'PM' => 'ING HomePay',
+      'BRAND' => t('ING HomePay'),
+    ),
+    'postfinance_e_finance' => array(
+      'PM' => 'PostFinance e-finance',
+      'BRAND' => t('PostFinance e-finance'),
+    ),
+    'edankort' => array(
+      'PM' => 'eDankort',
+      'BRAND' => t('eDankort'),
+    ),
+    'giropay' => array(
+      'PM' => 'giropay',
+      'BRAND' => t('giropay'),
+    ),
+    'paysafecard' => array(
+      'PM' => 'paysafecard',
+      'BRAND' => t('paysafecard'),
+    ),
+    'directebanking' => array(
+      'PM' => 'DirectEbanking',
+      'BRAND' => t('Sofort Uberweisung'),
+    ),
+    'directebankingat' => array(
+      'PM' => 'DirectEbankingAT',
+      'BRAND' => t('DirectEbankingAT'),
+    ),
+    'directebankingbe' => array(
+      'PM' => 'DirectEbankingBE',
+      'BRAND' => t('DirectEbankingBE'),
+    ),
+    'directebankingch' => array(
+      'PM' => 'DirectEbankingCH',
+      'BRAND' => t('DirectEbankingCH'),
+    ),
+    'directebankingde' => array(
+      'PM' => 'DirectEbankingDE',
+      'BRAND' => t('DirectEbankingDE'),
+    ),
+    'directebankingfr' => array(
+      'PM' => 'DirectEbankingFR',
+      'BRAND' => t('DirectEbankingFR'),
+    ),
+    'directebankinggb' => array(
+      'PM' => 'DirectEbankingGB',
+      'BRAND' => t('DirectEbankingGB'),
+    ),
+    'directebankingit' => array(
+      'PM' => 'DirectEbankingIT',
+      'BRAND' => t('DirectEbankingIT'),
+    ),
+    'directebankingnl' => array(
+      'PM' => 'DirectEbankingNL',
+      'BRAND' => t('DirectEbankingNL'),
+    ),
+    /*Direct Debits*/
+    'directdebitsat' => array(
+      'PM' => 'Direct Debits AT',
+      'BRAND' => t('Direct Debits AT'),
+    ),
+    'directdebitsde' => array(
+      'PM' => 'Direct Debits DE',
+      'BRAND' => t('Direct Debits DE'),
+    ),
+    'directdebitsnl' => array(
+      'PM' => 'Direct Debits NL',
+      'BRAND' => t('Direct Debits NL'),
+    ),
+    /*Offline payment*/
+    'banktransfer' => array(
+      'PM' => 'Bank transfer',
+      'BRAND' => t('Bank transfer'),
+    ),
+    'openinvoicede' => array(
+      'PM' => 'Open Invoice DE',
+      'BRAND' => t('Open Invoice DE'),
+    ),
+    'openinvoicenl' => array(
+      'PM' => 'Open Invoice NL',
+      'BRAND' => t('Open Invoice NL'),
+    ),
+    /*Gift Cards*/
+    'intersolve' => array(
+      'PM' => 'InterSolve',
+      'BRAND' => t('InterSolve'),
+    ),
+    /*Others*/
+    'cashex' => array(
+      'PM' => 'cashEX',
+      'BRAND' => t('cashEX'),
+    ),
+    'cashu' => array(
+      'PM' => 'cashU',
+      'BRAND' => t('cashU'),
+    ),
+    'cashudirect' => array(
+      'PM' => 'cashU Direct',
+      'BRAND' => t('cashU Direct'),
+    ),
+    /*'aurora' => array(
       'PM' => 'CreditCard',
       'BRAND' => t('Aurora'),
     ),
@@ -1629,10 +1773,6 @@ function commerce_ogone_payment_methods() {
       'PM' => 'CreditCard',
       'BRAND' => t('Laser'),
     ),
-    'maestrouk' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('MaestroUK'),
-    ),
     'solo' => array(
       'PM' => 'CreditCard',
       'BRAND' => t('Solo'),
@@ -1641,10 +1781,6 @@ function commerce_ogone_payment_methods() {
       'PM' => 'CreditCard',
       'BRAND' => t('UATP'),
     ),
-    'bcmc' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('BCMC'),
-    ),
     'netreserve' => array(
       'PM' => 'CreditCard',
       'BRAND' => t('NetReserve'),
@@ -1652,11 +1788,7 @@ function commerce_ogone_payment_methods() {
     'privilege' => array(
       'PM' => 'CreditCard',
       'BRAND' => t('PRIVILEGE'),
-    ),
-    'paypal' => array(
-      'PM' => 'PAYPAL',
-      'BRAND' => t('PAYPAL'),
-    ),
+    ),*/
   );
 
 }
