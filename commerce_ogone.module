@@ -836,6 +836,85 @@ function validate_element($element, $form, &$form_state) {
     watchdog('commerce_ogone', "Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user.", array(), WATCHDOG_ERROR);
   }
 
+  //Sync the main credential settings for both of the methods offsite and direct.
+  //Change the settings for the direct payment if the offsite was set.
+  if (strstr(current_path(), 'commerce_payment_ogone_offsite') != FALSE) {
+  //Load the configuration for the direct payment.
+  $rule = rules_config_load('commerce_payment_ogone_direct');
+
+    //Loop through all elements of the rule.
+    foreach ($rule->actions() as $action) {
+      if ($action->getElementName() == 'commerce_payment_enable_' . 'ogone_direct') {
+        if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
+          $payment_method['settings'] = $action->settings['payment_method']['settings'];
+        }
+      }
+      //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
+      //Url account.
+      $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
+      //PSPID
+      $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
+      //userid
+      $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
+      //password
+      $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
+      //Sha algorithm
+      $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
+      //Sha-in
+      $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
+      //Sha-out
+      $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
+      //3D secure
+      //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+      //Thransaction type process
+      $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
+      //language
+      $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
+      //logs
+      $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+      //Save the settings for the direct payment method.
+      $action->save();
+    }
+  }
+  elseif(strstr(current_path(), 'commerce_payment_ogone_direct') != FALSE) {
+    //Load the configuration for the direct payment.
+    $rule = rules_config_load('commerce_payment_ogone_offsite');
+
+    //Loop through all elements of the rule.
+    foreach ($rule->actions() as $action) {
+      if ($action->getElementName() == 'commerce_payment_enable_' . 'ogone_offsite') {
+        if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
+          $payment_method['settings'] = $action->settings['payment_method']['settings'];
+        }
+      }
+      //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
+      //Url account.
+      $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
+      //PSPID
+      $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
+      //userid
+      $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
+      //password
+      $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
+      //Sha algorithm
+      $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
+      //Sha-in
+      $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
+      //Sha-out
+      $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
+      //3D secure
+      //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+      //Thransaction type process
+      $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
+      //language
+      $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
+      //logs
+      $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+      //Save the settings for the direct payment method.
+      $action->save();
+    }
+  }
+
   return TRUE;
 }
 
