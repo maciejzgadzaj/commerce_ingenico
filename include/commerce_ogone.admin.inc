@@ -399,3 +399,45 @@ function commerce_ogone_transaction_delete_form_submit($form, &$form_state) {
   }
   drupal_goto('admin/commerce/orders');
 }
+
+/**
+ * Automatically submits the order and transaction for an update.
+ */
+function commerce_ogone_update_redirect($order, $transaction) {
+  $form_state['values']['order'] = $order;
+  $form_state['values']['transaction'] = $transaction;
+  drupal_form_submit('commerce_ogone_update_form', $form_state);
+}
+
+/**
+ * Form to update transaction.
+ */
+function commerce_ogone_update_form($form, &$form_state) {
+  $form['order'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Order'),
+  );
+
+  $form['transaction'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Transaction'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit the query request for a single transaction update.
+ */
+function commerce_ogone_update_form_submit($form, &$form_state) {
+  $order = $form_state['values']['order'];
+  $transaction = $form_state['values']['transaction'];
+  $result = commerce_ogone_query_update($transaction, 1);
+  if ($result == TRUE) {
+    drupal_set_message(t('The transaction was updated.'), 'status');
+  }
+  elseif ($result == FALSE) {
+    drupal_set_message(t('The transaction was not updated'), 'error');
+  }
+  drupal_goto(t('admin/commerce/orders/@transaction/payment', array('@transaction' => $transaction->transaction_id)));
+}
