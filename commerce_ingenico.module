@@ -1,27 +1,28 @@
 <?php
 /**
  * @file
- * Implements Ogone payment services for use in Drupal Commerce.
+ * Implements Ingenico payment services for use in Drupal Commerce.
  */
 
-define('COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED', 'CAPTURED');
-define('COMMERCE_PAYMENT_STATUS_OGONE_REFUND', 'REFUNDED');
-define('COMMERCE_PAYMENT_STATUS_OGONE_CANCELED', 'CANCELED');
+define('COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED', 'CAPTURED');
+define('COMMERCE_PAYMENT_STATUS_INGENICO_REFUND', 'REFUNDED');
+define('COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED', 'CANCELED');
 
 /**
  * Implements hook_views_api().
  */
-function commerce_ogone_views_api() {
+function commerce_ingenico_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'commerce_ogone') . '/include/views',
+    'path' => drupal_get_path('module', 'commerce_ingenico') . '/include/views',
   );
 }
+
 
 /**
  * Implements hook_libraries_info().
  */
-function commerce_ogone_libraries_info() {
+function commerce_ingenico_libraries_info() {
   $libraries['ogone'] = array(
     'name' => 'Ogone',
     'vendor url' => 'http://www.marlon.be/',
@@ -51,13 +52,13 @@ function commerce_ogone_libraries_info() {
 /**
  * Implements hook_commerce_payment_method_info().
  *
- * This hook will define the Ogone payment method
+ * This hook will define the Ingenico payment method
  */
-function commerce_ogone_commerce_payment_method_info() {
+function commerce_ingenico_commerce_payment_method_info() {
   $payment_methods = array();
 
-  $payment_methods['ogone_offsite'] = array(
-    'base' => 'commerce_ogone',
+  $payment_methods['ingenico_offsite'] = array(
+    'base' => 'commerce_ingenico',
     'title' => t('Ingenico online gateway'),
     'short_title' => t('Ingenico online gateway'),
     'display_title' => t('Ingenico online gateway'),
@@ -66,11 +67,11 @@ function commerce_ogone_commerce_payment_method_info() {
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
     'active' => FALSE,
-    'file' => 'include/commerce_ogone_direct.inc',
+    'file' => 'include/commerce_ingenico_direct.inc',
   );
 
-  $payment_methods['ogone_direct'] = array(
-    'base' => 'commerce_ogone',
+  $payment_methods['ingenico_direct'] = array(
+    'base' => 'commerce_ingenico',
     'title' => t('Ingenico direct gateway'),
     'short_title' => t('Ingenico direct gateway'),
     'display_title' => t('Ingenico direct gateway'),
@@ -80,7 +81,7 @@ function commerce_ogone_commerce_payment_method_info() {
     'offsite_autoredirect' => FALSE,
     'active' => FALSE,
     'callback' => array(),
-    'file' => 'include/commerce_ogone_direct.inc',
+    'file' => 'include/commerce_ingenico_direct.inc',
   );
 
   return $payment_methods;
@@ -89,40 +90,40 @@ function commerce_ogone_commerce_payment_method_info() {
 /**
  * Implements hook_menu().
  */
-function commerce_ogone_menu() {
+function commerce_ingenico_menu() {
   $items = array();
 
-  $items['commerce_ogone/callback'] = array(
-    'page callback' => 'commerce_ogone_callback',
+  $items['commerce_ingenico/callback'] = array(
+    'page callback' => 'commerce_ingenico_callback',
     'page arguments' => array(),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    //'file' => 'commerce_ogone.module',
+    //'file' => 'commerce_ingenico.module',
   );
 
   // Add a menu item for capturing.
-  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ogone-capture'] = array(
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ingenico-capture'] = array(
     'title' => 'Capture',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_ogone_capture_form', 3, 5),
+    'page arguments' => array('commerce_ingenico_capture_form', 3, 5),
     'access callback' => 'commerce_opgone_capture_access',
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'file' => 'include/commerce_ogone.admin.inc',
+    'file' => 'include/commerce_ingenico.admin.inc',
     'weight' => 1,
   );
 
   // Add a menu item for refund.
-  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ogone-refund'] = array(
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/ingenico-refund'] = array(
     'title' => 'Refund',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_ogone_refund_form', 3, 5),
-    'access callback' => 'commerce_ogone_refund_access',
+    'page arguments' => array('commerce_ingenico_refund_form', 3, 5),
+    'access callback' => 'commerce_ingenico_refund_access',
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'file' => 'include/commerce_ogone.admin.inc',
+    'file' => 'include/commerce_ingenico.admin.inc',
     'weight' => 2,
   );
 
@@ -130,12 +131,12 @@ function commerce_ogone_menu() {
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/cancel'] = array(
     'title' => 'Cancel',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_ogone_cancel_form', 3, 5),
-    'access callback' => 'commerce_ogone_cancel_access',
+    'page arguments' => array('commerce_ingenico_cancel_form', 3, 5),
+    'access callback' => 'commerce_ingenico_cancel_access',
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'file' => 'include/commerce_ogone.admin.inc',
+    'file' => 'include/commerce_ingenico.admin.inc',
     'weight' => 2,
   );
 
@@ -144,51 +145,51 @@ function commerce_ogone_menu() {
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('commerce_payment_payment_transaction_delete_form_validate', 3, 5),
-    'access callback' => 'commerce_ogone_delete_access',
+    'access callback' => 'commerce_ingenico_delete_access',
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'file' => 'include/commerce_ogone.admin.inc',
+    'file' => 'include/commerce_ingenico.admin.inc',
     'weight' => -100,
   );
 
    // Add a menu item for update.
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/update'] = array(
     'title' => 'Update',
-    'page callback' => 'commerce_ogone_update_redirect',
+    'page callback' => 'commerce_ingenico_update_redirect',
     'page arguments' => array(3, 5),
-    'access callback' => 'commerce_ogone_update_access',
+    'access callback' => 'commerce_ingenico_update_access',
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
-    'file' => 'include/commerce_ogone.admin.inc',
+    'file' => 'include/commerce_ingenico.admin.inc',
     'weight' => 2,
   );
 
   //Define a path to start the authorization process.
-  $items['commerce_ogone/3d_secure'] = array(
-    'page callback' => 'commerce_ogone_3d_secure',
-    //'page arguments' => array('commerce_ogone_3d_secure', 1,2),
+  $items['commerce_ingenico/3d_secure'] = array(
+    'page callback' => 'commerce_ingenico_3d_secure',
+    //'page arguments' => array('commerce_ingenico_3d_secure', 1,2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
 
   //Define a path to receive 3D Secure callback.
-  $items['commerce_ogone/3ds/callback'] = array(
-    'page callback' => 'commerce_ogone_3d_secure_callback',
+  $items['commerce_ingenico/3ds/callback'] = array(
+    'page callback' => 'commerce_ingenico_3d_secure_callback',
     'page arguments' => array(3),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
 
-  $rule = rules_config_load('commerce_payment_ogone_direct');
+  $rule = rules_config_load('commerce_payment_ingenico_direct');
   //if (!empty($rule) and $rule->active == 1) {
     //Menu item for the batch process.
     $items['admin/commerce/orders/batch'] = array(
-      'title' => 'Ogone capture',
+      'title' => 'Ingenico capture',
       'description' => 'Capture all pending transactions with batch process',
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('commerce_ogone_batch_form'),
+      'page arguments' => array('commerce_ingenico_batch_form'),
       'access callback' => TRUE,
       'type' => MENU_LOCAL_TASK,
       'weight' => 100,
@@ -197,8 +198,8 @@ function commerce_ogone_menu() {
 
   //Define a callback for the callback after the transaction has been proccess with the offsite method,
   //when the cards were preselected.
-  $items['commerce_ogone/redirect'] = array(
-    'page callback' => 'commerce_ogone_cards_redirect_callback',
+  $items['commerce_ingenico/redirect'] = array(
+    'page callback' => 'commerce_ingenico_cards_redirect_callback',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -209,34 +210,34 @@ function commerce_ogone_menu() {
 /**
  * Process the transaction after the redirection for preselected card types.
  */
-function commerce_ogone_cards_redirect_callback() {
+function commerce_ingenico_cards_redirect_callback() {
   global $user, $base_root;
   if (empty($_POST['orderID'])) {
     $order_id = $_GET['orderID'];
   }
   else {
-    $order_id = $_POST['orderID'];
+    $order_id = check_plain($_POST['orderID']);
   }
   $order = explode('-', $order_id);
 
   $order = commerce_order_load($order[0]);
   $order->status = 'pending';
   commerce_order_save($order);
-  $feedback = commerce_ogone_get_feedback();
-  $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+  $feedback = commerce_ingenico_get_feedback();
+  $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
     //Store the transaction.
     if (!empty($order_id)) {
-      $transaction = commerce_payment_transaction_new('ogone_offsite', $order->order_id);
+      $transaction = commerce_payment_transaction_new('ingenico_offsite', $order->order_id);
       $transaction->uid = $user->uid;
       $transaction->order_id = $order->order_id;
-      $transaction->payment_method = 'ogone_offsite';
-      $transaction->instance_id = 'ogone_offsite|commerce_payment_ogone_offsite';
+      $transaction->payment_method = 'ingenico_offsite';
+      $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
       $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
-      $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
+      $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
       $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
       $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
-      $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->remote_status = $_GET['STATUS'];
       $transaction->created = $order->created;
       $transaction->payload = $feedback;
@@ -248,7 +249,7 @@ function commerce_ogone_cards_redirect_callback() {
   else {
     drupal_set_message(t('The order# @order was cancelled.', array('@order' => $order->order_id)), 'error');
     if ($payment_method['settings']['logs'] == 0 ) {
-      watchdog('commerce_ogone', "The order# @order was cancelled.", array('@order' => $order->order_id), WATCHDOG_ERROR);
+      watchdog('commerce_ingenico', "The order# @order was cancelled.", array('@order' => $order->order_id), WATCHDOG_ERROR);
     }
     return drupal_goto($base_root);
   }
@@ -257,16 +258,16 @@ function commerce_ogone_cards_redirect_callback() {
 /**
  * Implements hook_menu_alter().
  */
-function commerce_ogone_menu_alter(&$items) {
+function commerce_ingenico_menu_alter(&$items) {
   //Create the path to the file to modify.
-  $path = drupal_get_path('module', 'commerce_ogone');
-  $file_path = $path . '/include/commerce_ogone.admin.inc';
+  $path = drupal_get_path('module', 'commerce_ingenico');
+  $file_path = $path . '/include/commerce_ingenico.admin.inc';
   require_once $file_path;
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/delete'] = array(
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_ogone_transaction_delete_form', 3, 5),
-    'access callback' => 'commerce_ogone_delete_access',
+    'page arguments' => array('commerce_ingenico_transaction_delete_form', 3, 5),
+    'access callback' => 'commerce_ingenico_delete_access',
     //'access callback' => TRUE,
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
@@ -281,35 +282,35 @@ function commerce_ogone_menu_alter(&$items) {
 /**
  * Alter the redirect form for the offsite payment method.
  */
-function commerce_ogone_redirect_alter_form($form, &$form_state, $order) {
-  $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+function commerce_ingenico_redirect_alter_form($form, &$form_state, $order) {
+  $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   $order->data['payment_redirect_key'] = drupal_hash_base64($order->changed);
   $settings = array(
     'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'payment_method' => $payment_method['instance_id'],
   );
-   commerce_payment_redirect_pane_next_page($order);
-   return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
+  commerce_payment_redirect_pane_next_page($order);
+  return commerce_ingenico_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
 }
 
 /**
  * Mimic batch trigger so it can be triggered when cron runs.
  */
-function commerce_ogone_batch_rule($date) {
+function commerce_ingenico_batch_rule($date) {
     $_SESSION['http_request_count'] = 0;
     $form_state = array();
     $form_state['values']['hidden_value'] = 1;
     $form_state['values']['op'] = 'Capture';
     $form_state['values']['submit'] = 'Capture';
     $form_state['values']['date'] = $date;
-    drupal_form_submit('commerce_ogone_batch_form', $form_state);
+    drupal_form_submit('commerce_ingenico_batch_form', $form_state);
 }
 
 /**
  * Form for the batch process.
  */
-function commerce_ogone_batch_form($form, &$form_state) {
+function commerce_ingenico_batch_form($form, &$form_state) {
   $form['capture_fieldset'] = array(
     '#type' => 'fieldset',
     '#description' => 'Capture all pending transactions',
@@ -342,7 +343,7 @@ function commerce_ogone_batch_form($form, &$form_state) {
 /**
  * If the form is submited start the batch process.
  */
-function commerce_ogone_batch_form_submit($form, &$form_state) {
+function commerce_ingenico_batch_form_submit($form, &$form_state) {
   $date = $form_state['values']['date'];
   if (is_numeric($form_state['values']['date']) != TRUE) {
     $date = strtotime($date);
@@ -350,7 +351,7 @@ function commerce_ogone_batch_form_submit($form, &$form_state) {
 
   if ($form_state['values']['hidden_value'] == 1) {
     $_SESSION['http_request_count'] = 0;
-    $batch = commerce_ogone_batch_process($date);
+    $batch = commerce_ingenico_batch_process($date);
     batch_set($batch);
   }
 }
@@ -358,12 +359,12 @@ function commerce_ogone_batch_form_submit($form, &$form_state) {
 /**
  * Batch process.
  */
-function commerce_ogone_batch_process($date = '') {
+function commerce_ingenico_batch_process($date = '') {
   if (!empty($date)) {
-    $all_transactions = commerce_ogone_load_all_pending_transactions($date);
+    $all_transactions = commerce_ingenico_load_all_pending_transactions($date);
   }
   else {
-    $all_transactions = commerce_ogone_load_all_pending_transactions();
+    $all_transactions = commerce_ingenico_load_all_pending_transactions();
   }
   $num_operations = 1000;
   $operations = array();
@@ -371,7 +372,7 @@ function commerce_ogone_batch_process($date = '') {
     $transaction_id = $value->transaction_id;
 
     $operations[] = array(
-      'commerce_ogone_batch_operation',
+      'commerce_ingenico_batch_operation',
       array(
         $transaction_id,
         t('(Operation @operation)', array('@operation' => $key)),
@@ -381,7 +382,7 @@ function commerce_ogone_batch_process($date = '') {
 
   $batch = array(
     'operations' => $operations,
-    'finished' => 'commerce_ogone_batchs_finished',
+    'finished' => 'commerce_ingenico_batchs_finished',
   );
 
   return $batch;
@@ -390,14 +391,14 @@ function commerce_ogone_batch_process($date = '') {
 /**
  * Batch operation process.
  */
-function commerce_ogone_batch_operation($transaction_id, $operation_details, &$context) {
-  $transaction = commerce_ogone_load_all_pending_transactions('', $transaction_id);
+function commerce_ingenico_batch_operation($transaction_id, $operation_details, &$context) {
+  $transaction = commerce_ingenico_load_all_pending_transactions('', $transaction_id);
   $transaction = reset($transaction);
   $order = commerce_order_load($transaction->order_id);
 
   $context['message'] = t('Process transactions "@title"', array('@title' => $transaction->payment_method)) . ' ' . $operation_details;
 
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
   $context['results'][] = $result;
   $_SESSION['http_request_count']++;
@@ -406,32 +407,32 @@ function commerce_ogone_batch_operation($transaction_id, $operation_details, &$c
 /**
  * Batch 'finished' callback.
  */
-function commerce_ogone_batchs_finished($success, $results, $operations) {
+function commerce_ingenico_batchs_finished($success, $results, $operations) {
   if ($success) {
     //drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
     //Update database.
     foreach ($results as $key => $value) {
       $result = $value;
-      $api = commerce_ogone_api_object();
+      $api = commerce_ingenico_api_object();
       $data = $api->get_response_data($result->data);
       $order_ids = $data['orderID'];
       $order_id = explode('-', $order_ids);
-      $transaction = commerce_ogone_load_all_pending_transactions($transaction_id = '', $order_id[0]);
+      $transaction = commerce_ingenico_load_all_pending_transactions($transaction_id = '', $order_id[0]);
       $transaction = reset($transaction);
       $order = commerce_order_load($order_id[0]);
       $order = reset($order);
       if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
         $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-        $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+        $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
         $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
         commerce_payment_transaction_save($transaction);
       }
       elseif ($data['NCERROR'] == '50001127') {
         $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-        $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+        $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
         $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
         commerce_payment_transaction_save($transaction);
-        drupal_set_message('This order has been captured previously.');
+        drupal_set_message(t('This order has been captured previously.'));
       }
       else {
         drupal_set_message(t('The operation was not successful.'), 'error');
@@ -457,7 +458,7 @@ function commerce_ogone_batchs_finished($success, $results, $operations) {
 /**
  * Loads transactions by date, transaction_id or order_id
  */
-function commerce_ogone_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
+function commerce_ingenico_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
   ->propertyCondition('status', 'pending');
@@ -484,7 +485,7 @@ function commerce_ogone_load_all_pending_transactions($date = '', $transaction_i
 /**
  * Begin the 3d authorization procedure.
  */
-function commerce_ogone_3d_secure() {
+function commerce_ingenico_3d_secure() {
   $form_redirect = $_GET['result'];
   $decode_page = base64_decode($form_redirect);
   if (strstr($decode_page, '&#58;') != FALSE) {
@@ -497,32 +498,34 @@ function commerce_ogone_3d_secure() {
 /**
  * Callback from the 3d secure procedure.
  */
-function commerce_ogone_3d_secure_callback() {
+function commerce_ingenico_3d_secure_callback() {
   global $user, $base_root;
   if (empty($_POST['ORDERID'])) {
     $order_id = $_GET['ORDERID'];
   }
   else {
-    $order_id = $_POST['ORDERID'];
+    $order_id = check_plain($_POST['ORDERID']);
   }
+  variable_set('post_3D', $_POST);
+  variable_set('get_3D', $_GET);
   $order = commerce_order_load($order_id);
   $order->status = 'pending';
   commerce_order_save($order);
-  $feedback = commerce_ogone_get_feedback();
+  $feedback = commerce_ingenico_get_feedback();
 
-  $payment_method = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+  $payment_method = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
   //Store the transaction.
   if (!empty($order_id)) {
-    $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+    $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
     $transaction->uid = $user->uid;
     $transaction->order_id = $order->order_id;
-    $transaction->payment_method = 'ogone_direct';
-    $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
-    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : $_POST['PAYID'];
-    $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
+    $transaction->payment_method = 'ingenico_direct';
+    $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
+    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : check_plain($_POST['PAYID']);
+    $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
     $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
-    $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+    $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
     $transaction->remote_status = $feedback['STATUS'];
     $transaction->created = $order->created;
     $transaction->payload = $feedback;
@@ -530,23 +533,23 @@ function commerce_ogone_3d_secure_callback() {
   }
 
   //Check if the 3d secure has faild.
-  if ((!empty($_GET['3D']) and $_GET['3D'] == 'failed') or (!empty($_POST['3D']) and $_POST['3D'] == 'failed')) {
+  /*if ((!empty($_GET['3D']) and $_GET['3D'] == 'failed') or (!empty($_POST['3D']) and $_POST['3D'] == 'failed')) {
     if ( $payment_method['settings']['3d_secure'] == 2 and $feedback['NCSTATUS'] == 0 and $feedback['NCERROR'] == 0) {
       drupal_set_message(t('Your transaction was accepted!'), 'status');
       return drupal_goto($base_root);
     }
     else {
-      $api = commerce_ogone_api_object();
-      $remote_order_id = !empty($_GET['REMOTE_ORDER_ID']) ? $_GET['REMOTE_ORDER_ID'] : $_POST['REMOTE_ORDER_ID'];
+      $api = commerce_ingenico_api_object();
+      $remote_order_id = !empty($_GET['REMOTE_ORDER_ID']) ? $_GET['REMOTE_ORDER_ID'] : check_plain($_POST['REMOTE_ORDER_ID']);
       $order->order_id = $remote_order_id;
       $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel', $pay_id = $feedback['PAYID'], $sub_id = '', $amount = '');
 
       $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
       commerce_payment_transaction_save($transaction);
-      drupal_set_message(t('You can only use 3D secure card for this transaction! Your transaction has been denny!'), 'error');
+      drupal_set_message(t('You can only use 3D secure card for this transaction! Your transaction has been deny!'), 'error');
       return drupal_goto($base_root);
     }
-  }
+  }*/
 
 
   //If successeful operation go to checkout complete.
@@ -557,9 +560,9 @@ function commerce_ogone_3d_secure_callback() {
  * Determine whether the user has permissions to perform capture.
  */
 function commerce_opgone_capture_access($order, $transaction) {
-  // Return FALSE if the transaction isn't for Ogone or isn't
+  // Return FALSE if the transaction isn't for Ingenico or isn't
   // awaiting capture.
-  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+  if (($transaction->payment_method !== 'ingenico_direct' and $transaction->payment_method !== 'ingenico_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
     return FALSE;
   }
   // Allow access if the user can update this transaction.
@@ -569,10 +572,10 @@ function commerce_opgone_capture_access($order, $transaction) {
 /**
  * Determine whether the user has permissions to perform refund.
  */
-function commerce_ogone_refund_access($order, $transaction) {
-  // Return FALSE if the transaction isn't for Ogone or isn't
+function commerce_ingenico_refund_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Ingenico or isn't
   // awaiting capture.
-  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED) {
+  if (($transaction->payment_method !== 'ingenico_direct' and $transaction->payment_method !== 'ingenico_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED) {
     return FALSE;
   }
   // Allow access if the user can update this transaction.
@@ -582,18 +585,28 @@ function commerce_ogone_refund_access($order, $transaction) {
 /**
  * Determine whether the user has permissions to perform cancel.
  */
-function commerce_ogone_cancel_access($order, $transaction) {
-  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+function commerce_ingenico_cancel_access($order, $transaction) {
+  if (($transaction->payment_method !== 'ingenico_direct' and $transaction->payment_method !== 'ingenico_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
     return FALSE;
   }
   return commerce_payment_transaction_access('update', $transaction);
 }
 
 /**
+ * Determine whether the user has permissions to perform update.
+ */
+function commerce_ingenico_update_access($order, $transaction) {
+  if (($transaction->payment_method !== 'ingenico_direct' and $transaction->payment_method !== 'ingenico_offsite')) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
  * Determine whether the user has permissions to perform deletion.
  */
-function commerce_ogone_delete_access($order, $transaction) {
-  if (($transaction->payment_method !== 'ogone_direct' and $transaction->payment_method !== 'ogone_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
+function commerce_ingenico_delete_access($order, $transaction) {
+  if (($transaction->payment_method !== 'ingenico_direct' and $transaction->payment_method !== 'ingenico_offsite') || empty($transaction->remote_id) || $transaction->status !== COMMERCE_PAYMENT_STATUS_PENDING) {
     return FALSE;
   }
   return commerce_payment_transaction_access('update', $transaction);
@@ -602,11 +615,11 @@ function commerce_ogone_delete_access($order, $transaction) {
 /**
  * Creates api object.
  */
-function commerce_ogone_api_object($settings = array()) {
-  module_load_include('php', 'commerce_ogone', 'commerce_ogone.api');
-  $instance = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+function commerce_ingenico_api_object($settings = array()) {
+  module_load_include('php', 'commerce_ingenico', 'commerce_ingenico.api');
+  $instance = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
-  return new OgoneApi($settings + $instance['settings']);
+  return new IngenicoApi($settings + $instance['settings']);
 }
 
 /**
@@ -615,10 +628,10 @@ function commerce_ogone_api_object($settings = array()) {
  * Returns form elements for the payment method's settings form included
  * as part of the payment method's enabling action in Rules
  */
-function commerce_ogone_settings_form($settings = NULL) {
+function commerce_ingenico_settings_form($settings = NULL) {
   $form = array();
   $languages = language_list();
-  $language_codes = _commerce_ogone_get_language_code_list();
+  $language_codes = _commerce_ingenico_get_language_code_list();
 
   $settings = (array) $settings + array(
     'account' => 'test',
@@ -633,8 +646,8 @@ function commerce_ogone_settings_form($settings = NULL) {
   // BASIC settings
   $form['account'] = array(
     '#type' => 'radios',
-    '#title' => t('Ogone account'),
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'account')),
+    '#title' => t('Ingenico account'),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'account')),
     '#options' => array(
       'test' => ('Test account - for testing purposes only'),
       'prod' => ('Production account - use for processing real transactions'),
@@ -643,16 +656,16 @@ function commerce_ogone_settings_form($settings = NULL) {
   );
   $form['pspid'] = array(
     '#type' => 'textfield',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'pspid')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'pspid')),
     '#title' => t('PSPID'),
-    '#description' => t('Your Ogone PSPID login username'),
+    '#description' => t('Your Ingenico PSPID login username'),
     '#default_value' => $settings['pspid'],
     '#required' => TRUE,
   );
 
   $form['userid'] = array(
     '#type' => 'textfield',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'userid')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'userid')),
     '#title' => t('USERID'),
     '#description' => t('Your API username.'),
     '#default_value' => !empty($settings['userid']) ? $settings['userid'] : '',
@@ -661,7 +674,7 @@ function commerce_ogone_settings_form($settings = NULL) {
 
   $form['password'] = array(
     '#type' => 'textfield',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'password')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'password')),
     '#title' => t('PSWD'),
     '#description' => t('Your API password.'),
     '#default_value' => !empty($settings['password']) ? $settings['password'] : '',
@@ -671,7 +684,7 @@ function commerce_ogone_settings_form($settings = NULL) {
   // SECURITY settings
   $form['sha_algorithm'] = array(
     '#type' => 'select',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'selectsha')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'selectsha')),
     '#title' => t('Select SHA algorithm type.'),
     '#description' => t('You can choose from SHA-1, SHA-256 and SHA-512 algorithm types to hash your data.'),
     '#options' => array(
@@ -685,44 +698,44 @@ function commerce_ogone_settings_form($settings = NULL) {
 
   $form['sha_in'] = array(
     '#type' => 'textfield',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'shain')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'shain')),
     '#title' => t('SHA-IN Pass phrase.'),
-    '#description' => t('The SHA-IN Pass phrase as entered in Ogone technical settings - "Data and origin verification" tab.'),
+    '#description' => t('The SHA-IN Pass phrase as entered in Ingenico technical settings - "Data and origin verification" tab.'),
     '#default_value' => $settings['sha_in'],
     '#required' => TRUE,
   );
 
   $form['sha_out'] = array(
     '#type' => 'textfield',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'shaout')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'shaout')),
     '#title' => t('SHA-OUT Pass phrase.'),
-    '#description' => t('The SHA-OUT Pass phrase as entered in Ogone technical settings - "Transaction feedback" tab.'),
+    '#description' => t('The SHA-OUT Pass phrase as entered in Ingenico technical settings - "Transaction feedback" tab.'),
     '#default_value' => $settings['sha_out'],
     '#required' => TRUE,
   );
 
-  if (strstr(current_path(), 'ogone_direct')) {
+  if (strstr(current_path(), 'ingenico_direct')) {
     $form['3d_secure'] = array(
       '#type' => 'radios',
-      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => '3d-secure')),
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => '3d-secure')),
       '#title' => t('3D Secure security check of customers cards.'),
       '#default_value' => !empty($settings['3d_secure']) ? $settings['3d_secure'] : '0',
       '#options' => array(
-        '0' => t('Allways require authentication.'),
-        '1' => t('Do not perform 3D-Secure checks and always authorise.'),
+        '0' => t('Request 3-D Secure authentication when available.'),
+        '1' => t('No 3-D Secure authentication required.'),
 
       ),
     );
   }
 
   /*
-  if (strstr(current_path(), 'ogone_direct')) {
+  if (strstr(current_path(), 'ingenico_direct')) {
     $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
   }*/
 
   $form['transaction_type_process'] = array(
     '#type' => 'radios',
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'transaction')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'transaction')),
     '#title' => t('Transaction capture method'),
     '#default_value' => empty($settings['transaction_type_process']) ? 'sale' : $settings['transaction_type_process'],
     '#options' => array(
@@ -731,62 +744,40 @@ function commerce_ogone_settings_form($settings = NULL) {
     ),
   );
 
-  if (strstr(current_path(), 'ogone_offsite')) {
+  if (strstr(current_path(), 'ingenico_offsite')) {
     $form['modify_card_types'] = array(
       '#type' => 'checkbox',
-      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'cardpreselect')),
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'cardpreselect')),
       '#title' => t('Preselect payment type.'),
       '#description' => t('Allows customers to preselect payment type before the actual payment.'),
       '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
     );
   }
 
-  if (strstr(current_path(), 'ogone_offsite') != FALSE) {
-    foreach (commerce_ogone_payment_methods() as $key => $value) {
+  if (strstr(current_path(), 'ingenico_offsite') != FALSE) {
+    foreach (commerce_ingenico_payment_methods() as $key => $value) {
       $options[$key] = $value['BRAND'];
       $default_value[$key] = $key;
     }
     $form['payment_method_types'] = array(
       '#type' => 'checkboxes',
-      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'methodtypes')),
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'methodtypes')),
       '#title' => 'Payment method types',
       '#description' => t('Select payment methods that will be available.'),
       '#options' => $options,
       '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
     );
   }
-/*
-  $form['force_direct_sale'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Force sale transactions.'),
-    '#description' => t('Force every transaction to be authorized and captured automatically.'),
-    '#default_value' => !empty($settings['force_direct_sale']) ? $settings['force_direct_sale'] : '',
-  );*/
 
   $form['language_list'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Language codes') . theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'languages')),
+    '#title' => t('Language codes') . theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'languages')),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
   $default_language_code = (isset($settings['language_list']['default_language'])) ? $settings['language_list']['default_language'] : 'en_US';
-  /*foreach ($languages as $language) {
-    // Attempt to provide an intelligent default based on the language prefix.
-    // for example language prefix 'fr' would create the default Ogone language 'fr_FR'.
-    $default_prefix_code = explode('-', $language->prefix);
-    $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
-    // Verify whether the intelligent default value is valid. If not, fall back to default language code
-    $default_prefix_code = (in_array($default_prefix_code, array_keys($language_codes))) ? $default_prefix_code : $default_language_code;
 
-  $form['language_list']['selected'] = array(
-      '#type' => 'select',
-      '#title' => check_plain($language->name),
-      '#options' => $language_codes,
-      '#default_value' => (isset($settings['language_list'][$language->language])) ? $settings['language_list'][$language->language] : $default_prefix_code,
-      '#description' => t('Language code. For instance: en_US, nl_NL, fr_FR, ...'),
-    );
-  }*/
   $form['language_list']['default_language'] = array(
     '#type' => 'select',
     '#title' => 'Default',
@@ -798,11 +789,11 @@ function commerce_ogone_settings_form($settings = NULL) {
   $form['logs'] = array(
     '#type' => 'select',
     '#title' => t('Logs an issue'),
-    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ogone', 'topic' => 'logs')),
+    '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'logs')),
     '#options' => array(
        '0' => 'Always log an issue',
        '1' => 'Never log issues',
-     ),
+    ),
     '#default_value' => $default_language_code,
     '#description' => t(''),
   );
@@ -815,20 +806,20 @@ function commerce_ogone_settings_form($settings = NULL) {
     '#element_validate' => array('validate_element'),
   );
 
-  $form['#submit'][] = 'commerce_ogone_settings_form_submit';
+  $form['#submit'][] = 'commerce_ingenico_settings_form_submit';
 
   return $form;
 }
 
 /**
- * Validate the merchant credentials(compare them with the ones entered on Ogone site).
+ * Validate the merchant credentials(compare them with the ones entered on ingenico site).
  */
 function validate_element($element, $form, &$form_state) {
   $elements = explode(',', $element['#value']);
 
   //Test the entered credentials.
-  $transaction = commerce_payment_transaction_new('ogone', 0);
-  $transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
+  $transaction = commerce_payment_transaction_new('ingenico', 0);
+  $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
 
   $settings = array(
     'pspid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['pspid'],
@@ -838,95 +829,157 @@ function validate_element($element, $form, &$form_state) {
     'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
   );
 
-  include_once('commerce_ogone.api.php');
-  $api = new OgoneApi($settings);
+  include_once('commerce_ingenico.api.php');
+  $api = new IngenicoApi($settings);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
   $data = $api->get_response_data($result->data);
 
   if ($data['NCERRORPLUS'] === 'The data you entered is not correct. Please retry.' and $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['logs'] == 0) {
-    form_error($element, t('Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user).'));
-    watchdog('commerce_ogone', "Your API credentials are wrong! Visit Ogone site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ogone site (USERID is the id of the ‘special’ API user.", array(), WATCHDOG_ERROR);
+    form_error($element, t('Your API credentials are wrong! Visit Ingenico site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ingenico site (USERID is the id of the ‘special’ API user).'));
+    watchdog('commerce_ingenico', "Your API credentials are wrong! Visit Ingenico site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ingenico site (USERID is the id of the ‘special’ API user.", array(), WATCHDOG_ERROR);
   }
 
   //Sync the main credential settings for both of the methods offsite and direct.
   //Change the settings for the direct payment if the offsite was set.
-  if (strstr(current_path(), 'commerce_payment_ogone_offsite') != FALSE) {
+  if (strstr(current_path(), 'commerce_payment_ingenico_offsite') != FALSE) {
   //Load the configuration for the direct payment.
-  $rule = rules_config_load('commerce_payment_ogone_direct');
+  $rule = rules_config_load('commerce_payment_ingenico_direct');
 
     //Loop through all elements of the rule.
     foreach ($rule->actions() as $action) {
-      if ($action->getElementName() == 'commerce_payment_enable_' . 'ogone_direct') {
+      if ($action->getElementName() == 'commerce_payment_enable_' . 'ingenico_direct') {
         if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
           $payment_method['settings'] = $action->settings['payment_method']['settings'];
         }
       }
-      //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
-      //Url account.
-      $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
-      //PSPID
-      $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
-      //userid
-      $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
-      //password
-      $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
-      //Sha algorithm
-      $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
-      //Sha-in
-      $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
-      //Sha-out
-      $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-      //3D secure
-      //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-      //Thransaction type process
-      $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
-      //language
-      $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
-      //logs
-      $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
-      //Save the settings for the direct payment method.
-      $action->save();
+      if (empty($action->settings['payment_method']['settings'])) {
+        $action->settings['payment_method'] = array('settings' => array(
+          //Url account.
+          'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
+          //PSPID
+          'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
+          //userid
+          'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
+          //password
+          'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
+          //Sha algorithm
+          'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
+          //Sha-in
+          'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
+          //Sha-out
+          'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
+          //3D secure
+          //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+          //Thransaction type process
+          'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
+          //language
+          'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
+          //logs
+          'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+        ));
+        //Save the settings for the direct payment method.
+        $action->save();
+      }
+      else {
+        //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
+        //Url account.
+        $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
+        //PSPID
+        $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
+        //userid
+        $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
+        //password
+        $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
+        //Sha algorithm
+        $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
+        //Sha-in
+        $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
+        //Sha-out
+        $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
+        //3D secure
+        //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+        //Thransaction type process
+        $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
+        //language
+        $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
+        //logs
+        $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        //Save the settings for the direct payment method.
+        $action->save();
+      }
     }
   }
-  elseif(strstr(current_path(), 'commerce_payment_ogone_direct') != FALSE) {
+  //If we've selected the direct payment method.
+  elseif (strstr(current_path(), 'commerce_payment_ingenico_direct') != FALSE) {
     //Load the configuration for the direct payment.
-    $rule = rules_config_load('commerce_payment_ogone_offsite');
+    $rule = rules_config_load('commerce_payment_ingenico_offsite');
 
     //Loop through all elements of the rule.
     foreach ($rule->actions() as $action) {
-      if ($action->getElementName() == 'commerce_payment_enable_' . 'ogone_offsite') {
+      if ($action->getElementName() == 'commerce_payment_enable_' . 'ingenico_offsite') {
         if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
           $payment_method['settings'] = $action->settings['payment_method']['settings'];
         }
       }
-      //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
-      //Url account.
-      $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
-      //PSPID
-      $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
-      //userid
-      $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
-      //password
-      $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
-      //Sha algorithm
-      $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
-      //Sha-in
-      $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
-      //Sha-out
-      $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-      //3D secure
-      //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-      //Thransaction type process
-      $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
-      //language
-      $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
-      //logs
-      $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
-      //Save the settings for the direct payment method.
-      $action->save();
+      if (empty($action->settings['payment_method']['settings'])) {
+        $action->settings['payment_method'] = array('settings' => array(
+          //Url account.
+          'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
+          //PSPID
+          'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
+          //userid
+          'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
+          //password
+          'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
+          //Sha algorithm
+          'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
+          //Sha-in
+          'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
+          //Sha-out
+          'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
+          //3D secure
+          //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+          //Thransaction type process
+          'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
+          //language
+          'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
+          //logs
+          'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+        ));
+        //Save the settings for the direct payment method.
+        $action->save();
+      }
+      else {
+        //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
+        //Url account.
+        $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
+        //PSPID
+        $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
+        //userid
+        $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
+        //password
+        $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
+        //Sha algorithm
+        $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
+        //Sha-in
+        $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
+        //Sha-out
+        $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
+        //3D secure
+        //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+        //Thransaction type process
+        $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
+        //language
+        $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
+        //logs
+        $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        //Save the settings for the direct payment method.
+        $action->save();
+      }
     }
   }
+
 
   return TRUE;
 }
@@ -937,10 +990,10 @@ function validate_element($element, $form, &$form_state) {
  * returns form elements that should be submitted to the redirected
  * payment service
  */
-function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_method) {
+function commerce_ingenico_redirect_form($form, &$form_state, $order, $payment_method) {
   // Return an error if the enabling action's settings haven't been configured.
   if (empty($payment_method['settings']['pspid'])) {
-    drupal_set_message(t('Ogone is not configured for use. No Ogone PSPID has been specified.'), 'error');
+    drupal_set_message(t('Ingenico is not configured for use. No Ingenico PSPID has been specified.'), 'error');
     return array();
   }
 
@@ -956,15 +1009,16 @@ function commerce_ogone_redirect_form($form, &$form_state, $order, $payment_meth
     'payment_method' => $payment_method['instance_id'],
   );
 
-  return commerce_ogone_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
+  return commerce_ingenico_build_redirect_form($form, $form_state, $order, $payment_method['settings'] + $settings);
 }
 
 /**
  * Helper function for the redirect_form callback.
- * Builds an Ogone payment form from an order object.
+ * Builds an Ingenico payment form from an order object.
  */
-function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settings) {
+function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $settings) {
   global $user, $base_root;
+  $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
 
   // Get financial info
@@ -995,7 +1049,7 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'ORDERID' => $order->order_id . '-' . time(),
     'AMOUNT' => $amount,
     'CURRENCY' => $currency_code,
-    'LANGUAGE' => _commerce_ogone_get_language_code($settings),
+    'LANGUAGE' => _commerce_ingenico_get_language_code($settings),
     'CN' => $customer_name,
     'ORIG' => 'OGDC140415',
     'EMAIL' => $order->mail,
@@ -1007,7 +1061,50 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     'EXCEPTIONURL' => $settings['return'],
     'CANCELURL' => $settings['cancel_return'],
     'DEVICE' => $device,
+    'OWNERADDRESS' => trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']),
+    'OWNERZIP' => trim($customer_profile->commerce_customer_address['und'][0]['postal_code']),
+    'OWNERTOWN' => trim($customer_profile->commerce_customer_address['und'][0]['dependent_locality']),
+    'OWNERCTY' => trim($customer_profile->commerce_customer_address['und'][0]['country']),
   );
+
+  // Adds Bill to information.
+  $data['ECOM_BILLTO_POSTAL_CITY'] = trim($customer_profile->commerce_customer_address['und'][0]['locality']);
+  $data['ECOM_BILLTO_POSTAL_COUNTRYCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['country']);
+  $data['ECOM_BILLTO_POSTAL_NAME_FIRST'] = trim($customer_profile->commerce_customer_address['und'][0]['first_name']);
+  $data['ECOM_BILLTO_POSTAL_NAME_LAST'] = trim($customer_profile->commerce_customer_address['und'][0]['last_name']);
+  $data['ECOM_BILLTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
+  $data['ECOM_BILLTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+  $data['ECOM_BILLTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
+  //$data['ECOM_BILLTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+
+  if  (module_exists('commerce_shipping')) {
+    $customer_profile = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
+    $data['ECOM_SHIPTO_COMPANY'] = trim($customer_profile->commerce_customer_address['und'][0]['organisation_name']);
+    $data['ECOM_SHIPTO_ONLINE_EMAIL'] = trim($order->mail);
+    $data['ECOM_SHIPTO_POSTAL_CITY'] = trim($customer_profile->commerce_customer_address['und'][0]['locality']);
+    $data['ECOM_SHIPTO_POSTAL_COUNTRYCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['country']);
+    $data['ECOM_SHIPTO_POSTAL_NAME_FIRST'] = trim($customer_profile->commerce_customer_address['und'][0]['first_name']);
+    $data['ECOM_SHIPTO_POSTAL_NAME_LAST'] = trim($customer_profile->commerce_customer_address['und'][0]['last_name']);
+    //$data['ECOM_SHIPTO_POSTAL_NAME_PREFIX'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
+    $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
+   // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+  }
+  else {
+    $data['ECOM_SHIPTO_COMPANY'] = trim($customer_profile->commerce_customer_address['und'][0]['organisation_name']);
+    $data['ECOM_SHIPTO_ONLINE_EMAIL'] = trim($order->mail);
+    $data['ECOM_SHIPTO_POSTAL_CITY'] = trim($customer_profile->commerce_customer_address['und'][0]['locality']);
+    $data['ECOM_SHIPTO_POSTAL_COUNTRYCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['country']);
+    $data['ECOM_SHIPTO_POSTAL_NAME_FIRST'] = trim($customer_profile->commerce_customer_address['und'][0]['first_name']);
+    $data['ECOM_SHIPTO_POSTAL_NAME_LAST'] = trim($customer_profile->commerce_customer_address['und'][0]['last_name']);
+    //$data['ECOM_SHIPTO_POSTAL_NAME_PREFIX'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
+    $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
+   // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+  }
+
   if (!empty($form_state['value']['PM']) and !empty($form_state['value']['type']) and $form_state['value']['type'] != 'other') {
     $data['PM'] = !empty($form_state['value']['PM']) ? $form_state['value']['PM'] : '';
     $data['BRAND'] = !empty($form_state['value']['type']) ? $form_state['value']['type'] : '';
@@ -1025,29 +1122,29 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
   }
 
   if ($settings['modify_card_types'] == 1) {
-    $data['ACCEPTURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['DECLINEURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['CANCELURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['ACCEPTURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['DECLINEURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['EXCEPTIONURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['CANCELURL'] = $base_root . '/commerce_ingenico/redirect';
   }
   else {
-    $data['ACCEPTURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['DECLINEURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/redirect';
-    $data['CANCELURL'] = $base_root . '/commerce_ogone/redirect';
+    $data['ACCEPTURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['DECLINEURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['EXCEPTIONURL'] = $base_root . '/commerce_ingenico/redirect';
+    $data['CANCELURL'] = $base_root . '/commerce_ingenico/redirect';
   }
 
-  // Allow modules to add or alter the data sent to Ogone before signing.
-  drupal_alter('commerce_ogone_data', $data, $order, $settings);
+  // Allow modules to add or alter the data sent to Ingenico before signing.
+  drupal_alter('commerce_ingenico_data', $data, $order, $settings);
 
   // NOTE: data should be ordered alphabetically for the SHA string
   ksort($data);
 
-  // Build the Ogone redirection URL.
-  $url = variable_get('commerce_ogone_provider_url', 'https://secure.ogone.com/ncol/');
+  // Build the Ingenico redirection URL.
+  $url = variable_get('commerce_ingenico_provider_url', 'https://secure.ogone.com/ncol/');
   $url .=  $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   //Get the hash algorithm.
   $sha_composer = $api->prepare_phrase_to_hash('sha_in');
   //Hash the sha phrace with the billing data.
@@ -1075,9 +1172,15 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
     '#value' => t('Proceed with payment'),
   );
 
-  foreach($form as $key => $value) {
-    if($key == '#action' || $key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
-         $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' || $key == 'SHASign' || $key == 'submit') {
+  foreach ($form as $key => $value) {
+    if ($key == '#action' || $key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+      $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' ||
+      $key == 'OWNERADDRESS' || $key == 'OWNERZIP' || $key == 'OWNERTOWN' || $key == 'OWNERCTY' ||
+      $key == 'ECOM_BILLTO_POSTAL_CITY' || $key == 'ECOM_BILLTO_POSTAL_COUNTRYCODE' || $key == 'ECOM_BILLTO_POSTAL_NAME_FIRST' || $key == 'ECOM_BILLTO_POSTAL_NAME_LAST' ||
+      $key == 'ECOM_BILLTO_POSTAL_POSTALCODE' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE1' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE2' || $key == 'SHASign'
+      || $key == 'ECOM_SHIPTO_COMPANY' || $key == 'ECOM_SHIPTO_ONLINE_EMAIL' || $key == 'ECOM_SHIPTO_POSTAL_CITY' || $key == 'ECOM_SHIPTO_POSTAL_COUNTRYCODE'
+      || $key == 'ECOM_SHIPTO_POSTAL_NAME_FIRST' || $key == 'ECOM_SHIPTO_POSTAL_NAME_LAST' || $key == 'ECOM_SHIPTO_POSTAL_POSTALCODE' || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE1'
+      || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE2' || $key == 'submit') {
       $new_form[$key] = $value;
     }
   }
@@ -1092,23 +1195,23 @@ function commerce_ogone_build_redirect_form($form, &$form_state, $order, $settin
 /**
  * Implements hook_redirect_form_validate().
  */
-function commerce_ogone_redirect_form_validate($order, $payment_method) {
-  return commerce_ogone_process_callback($order, $payment_method);
+function commerce_ingenico_redirect_form_validate($order, $payment_method) {
+  return commerce_ingenico_process_callback($order, $payment_method);
 }
 
 /**
- * Gets the Ogone feedback from GET / POST parameters.
+ * Gets the Ingenico feedback from GET / POST parameters.
  *
  * @return
- *   An associative array containing the Ogone feedback taken from the $_GET and
+ *   An associative array containing the Ingenico feedback taken from the $_GET and
  *   $_POST superglobals, excluding 'q' and with the parameter keys uppercased.
  *   Returns FALSE if the SHASIGN parameter is missing (indicating missing or
- *   invalid Ogone feedback).
+ *   invalid Ingenico feedback).
  */
-function commerce_ogone_get_feedback() {
+function commerce_ingenico_get_feedback() {
   $feedback = FALSE;
   if (isset($_REQUEST['SHASIGN'])) {
-    // Prepare the feedback values sent by Ogone for processing. We don't use
+    // Prepare the feedback values sent by ingenico for processing. We don't use
     // $_REQUEST since this includes the $_SESSION variables.
     $feedback = $_GET + $_POST;
     unset($feedback['q']);
@@ -1120,16 +1223,16 @@ function commerce_ogone_get_feedback() {
 /**
  * Check if SHA in callback feedback is valid
  */
-function commerce_ogone_valid_sha_callback($order, $payment_method, $feedback) {
-  module_load_include('inc', 'commerce_ogone', 'commerce_ogone.sha');
+function commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback) {
+  module_load_include('inc', 'commerce_ingenico', 'commerce_ingenico.sha');
   // Check if the received SHA string is valid
  // $sha_out = $payment_method['settings']['sha_out'];
   if (empty($payment_method)) {
-    $payment_method = commerce_payment_method_instance_load('ogone_offsite|commerce_payment_ogone_offsite');
+    $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   }
-  if (!commerce_ogone_feedback_valid_sha($feedback)) {
+  if (!commerce_ingenico_feedback_valid_sha($feedback)) {
     if ($payment_method['settings']['logs'] == 0) {
-      watchdog('commerce_ogone', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
+      watchdog('commerce_ingenico', "SHA signature doesn't match", array(), WATCHDOG_ERROR);
     }
     return FALSE;
   }
@@ -1137,20 +1240,20 @@ function commerce_ogone_valid_sha_callback($order, $payment_method, $feedback) {
 }
 
 /**
- * Menu callback handler for Ogone Direct HTTP server-to-server request
+ * Menu callback handler for Ingenico Direct HTTP server-to-server request
  */
-function commerce_ogone_callback() {
+function commerce_ingenico_callback() {
   // Load order and payment_method objects
-  if ($feedback = commerce_ogone_get_feedback()) {
+  if ($feedback = commerce_ingenico_get_feedback()) {
     $order = commerce_order_load_by_number($feedback['ORDERID']);
     if ($order) {
       // Load the payment method, since it won't be available if no $order object was passed in as argument
       $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
-      if (!$payment_method || $payment_method['method_id'] != 'ogone') {
+      if (!$payment_method || $payment_method['method_id'] != 'ingenico') {
         return FALSE;
       }
-      if (commerce_ogone_valid_sha_callback($order, $payment_method, $feedback)) {
-        commerce_ogone_process_transaction($order, $payment_method, $feedback);
+      if (commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback)) {
+        commerce_ingenico_process_transaction($order, $payment_method, $feedback);
       }
     }
   }
@@ -1158,29 +1261,29 @@ function commerce_ogone_callback() {
 }
 
 /**
- * Process callback information from Ogone
+ * Process callback information from Ingenico
  * This can either be through a redirect after payment, or a Direct HTTP server-to-server request
  */
-function commerce_ogone_process_callback($order, $payment_method) {
-  if ($feedback = commerce_ogone_get_feedback()) {
-    if (commerce_ogone_valid_sha_callback($order, $payment_method, $feedback)) {
-      // Process the transaction based on the Ogone parameters received
-      commerce_ogone_process_transaction($order, $payment_method, $feedback);
+function commerce_ingenico_process_callback($order, $payment_method) {
+  if ($feedback = commerce_ingenico_get_feedback()) {
+    if (commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback)) {
+      // Process the transaction based on the Ingenico parameters received
+      commerce_ingenico_process_transaction($order, $payment_method, $feedback);
       return TRUE;
     }
   }
 }
 
 /**
- * Get transaction with a specific Ogone PAYID.
+ * Get transaction with a specific Ingenico PAYID.
  */
-function commerce_ogone_get_payment_transaction($feedback) {
+function commerce_ingenico_get_payment_transaction($feedback) {
   $feedback_remote_id = $feedback['PAYID'];
   $query = new EntityFieldQuery;
 
   $result = $query
     ->entityCondition('entity_type', 'commerce_payment_transaction')
-    ->propertyCondition('payment_method', 'ogone')
+    ->propertyCondition('payment_method', 'ingenico')
     ->propertyCondition('remote_id', $feedback_remote_id)
     ->execute();
   if (isset($result['commerce_payment_transaction']) && count($result['commerce_payment_transaction']) > 0) {
@@ -1191,27 +1294,27 @@ function commerce_ogone_get_payment_transaction($feedback) {
 }
 
 /**
- * Process the payment transaction with the info received from Ogone
+ * Process the payment transaction with the info received from Ingenico
  *
  * @param $order
  *   The loaded order that is being processed
  * @param $payment_method
  *   The payment method settings
  * @param $feedback
- *   The parameters received from Ogone regarding the payment
+ *   The parameters received from Ingenico regarding the payment
  * @param $redirect
  *   Specifies whether to call redirect functions or not
  */
-function commerce_ogone_process_transaction($order, $payment_method, $feedback, $redirect = TRUE) {
-  $transaction_id = commerce_ogone_get_payment_transaction($feedback);
+function commerce_ingenico_process_transaction($order, $payment_method, $feedback, $redirect = TRUE) {
+  $transaction_id = commerce_ingenico_get_payment_transaction($feedback);
   if (!$transaction_id) {
-    $transaction = commerce_payment_transaction_new('ogone', $order->order_id);
+    $transaction = commerce_payment_transaction_new('ingenico', $order->order_id);
   }
   else {
     $transaction = commerce_payment_transaction_load($transaction_id);
   }
 
-  $payment_status = commerce_ogone_feedback_status($feedback['STATUS']);
+  $payment_status = commerce_ingenico_feedback_status($feedback['STATUS']);
 
   // identifying data
   $transaction->instance_id = $payment_method['instance_id'];
@@ -1220,10 +1323,10 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback, 
   $transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
   $transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
   // payment status
-  $transaction->payment_method = 'ogone_offsite';
+  $transaction->payment_method = 'ingenico_offsite';
   $transaction->remote_status = $feedback['STATUS'];
-  $transaction->status =  ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-  $transaction->message = commerce_ogone_status_messages($feedback['STATUS']);
+  $transaction->status =  ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+  $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
   $transaction->payload = $feedback;
   commerce_payment_transaction_save($transaction);
   if ($redirect) {
@@ -1239,9 +1342,9 @@ function commerce_ogone_process_transaction($order, $payment_method, $feedback, 
 /**
  * Get a list of enabled currencies
  *
- * @TODO: figure out which currencies Ogone actually supports
+ * @TODO: figure out which currencies Ingenico actually supports
  */
-function commerce_ogone_currencies() {
+function commerce_ingenico_currencies() {
   // Build a currency options list from all enabled currencies.
   $options = array();
 
@@ -1257,14 +1360,14 @@ function commerce_ogone_currencies() {
 }
 
 /**
- * Get a payment status and message based on Ogone status ID
+ * Get a payment status and message based on Ingenico status ID
  * @param $status
- *   received Ogone status ID
+ *   received ingenico status ID
  * @return array
  *   key 'code' contains the commerce status
- *   key 'message' contains a textual representation of the Ogone status ID
+ *   key 'message' contains a textual representation of the ingenico status ID
  */
-function commerce_ogone_feedback_status($status) {
+function commerce_ingenico_feedback_status($status) {
   switch ($status) {
     //Success.
     case 4:  //Order stored
@@ -1441,16 +1544,16 @@ function commerce_ogone_feedback_status($status) {
  *   Received settings
  * @return language code
  */
-function _commerce_ogone_get_language_code($settings) {
+function _commerce_ingenico_get_language_code($settings) {
   global $language;
-  $ogone_language_codes = _commerce_ogone_get_language_code_list();
+  $ingenico_language_codes = _commerce_ingenico_get_language_code_list();
   if (isset($settings['language_list'][$language->language])) {
     $langcode = $settings['language_list'][$language->language];
   }
   else {
     $default_prefix_code = explode('-', $language->prefix);
     $default_prefix_code = $default_prefix_code[0] . '_' . drupal_strtoupper($default_prefix_code[0]);
-    if (isset($ogone_language_codes[$default_prefix_code])) {
+    if (isset($ingenico_language_codes[$default_prefix_code])) {
       $langcode = $default_prefix_code;
     }
     else {
@@ -1461,10 +1564,10 @@ function _commerce_ogone_get_language_code($settings) {
 }
 
 /**
- * Returns a list of supported Ogone language codes.
+ * Returns a list of supported ingenico language codes.
  * @return language codes
  */
-function _commerce_ogone_get_language_code_list() {
+function _commerce_ingenico_get_language_code_list() {
   $language_codes = array(
     'ar_AR' => t('Arabic'),
     'cs_CZ' => t('Czech'),
@@ -1495,7 +1598,7 @@ function _commerce_ogone_get_language_code_list() {
 /**
  * Loads transactions by transaction id.
  */
-function commerce_ogone_transaction_load($transaction_id) {
+function commerce_ingenico_transaction_load($transaction_id) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
   ->propertyCondition('transaction_id', $transaction_id)
@@ -1513,25 +1616,25 @@ function commerce_ogone_transaction_load($transaction_id) {
 /**
  * Implements hool_commerce_payment_transaction_status_info().
  */
-function commerce_ogone_commerce_payment_transaction_status_info() {
+function commerce_ingenico_commerce_payment_transaction_status_info() {
   $statuses = array();
 
-  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED] = array(
-    'status' => COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED,
+  $statuses[COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED,
     'title' => t('Captured'),
     'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
     'total' => TRUE,
   );
 
-  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_REFUND] = array(
-    'status' => COMMERCE_PAYMENT_STATUS_OGONE_REFUND,
+  $statuses[COMMERCE_PAYMENT_STATUS_INGENICO_REFUND] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_INGENICO_REFUND,
     'title' => t('Refund'),
     'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
     'total' => FALSE,
   );
 
-  $statuses[COMMERCE_PAYMENT_STATUS_OGONE_CANCELED] = array(
-    'status' => COMMERCE_PAYMENT_STATUS_OGONE_CANCELED,
+  $statuses[COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED,
     'title' => t('Canceled'),
     'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-failure.png',
     'total' => FALSE,
@@ -1543,7 +1646,7 @@ function commerce_ogone_commerce_payment_transaction_status_info() {
 /**
  * Capture function to be implemented with rules.
  */
-function commerce_ogone_capture($transaction, $amount, $order, $payment_method) {
+function commerce_ingenico_capture($transaction, $amount, $order, $payment_method) {
   $order = commerce_order_load($transaction->order_id);
   $payment_methods = commerce_payment_method_instance_load($transaction->instance_id);
   $transaction_method = explode('|', $transaction->instance_id);
@@ -1553,28 +1656,28 @@ function commerce_ogone_capture($transaction, $amount, $order, $payment_method) 
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
   $data = $api->get_response_data($result->data);
   if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
     $transaction->amount = commerce_currency_decimal_to_amount($amount, $transaction->currency_code);
     $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-    $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+    $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
     $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
     commerce_payment_transaction_save($transaction);
     return TRUE;
   }
   elseif ($data['NCERROR'] == '50001127') {
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
-      drupal_set_message('This order has been captured previously.');
+      drupal_set_message(t('This order has been captured previously.'));
   }
   else {
     drupal_set_message(t('The operation was not successful.'), 'error');
     if ($payment_method['settings']['logs'] == 0) {
-      watchdog('commerce_ogone', "The operation was not successful. Transaction with id: %id was not captured.", array('%id' => $transaction->transaction_id), WATCHDOG_ERROR);
+      watchdog('commerce_ingenico', "The operation was not successful. Transaction with id: %id was not captured.", array('%id' => $transaction->transaction_id), WATCHDOG_ERROR);
     }
     return FALSE;
   }
@@ -1583,38 +1686,40 @@ function commerce_ogone_capture($transaction, $amount, $order, $payment_method) 
 /**
  * Update the status of all captured transactions outside of Drupal.
  */
-function commerce_ogone_query_update($transaction, $manual = '') {
-  $api = commerce_ogone_api_object();
+function commerce_ingenico_query_update($transaction, $manual = '') {
+  $api = commerce_ingenico_api_object();
   $pay_id = explode('/', $transaction->remote_id);
   $sub_id = !empty($pay_id[1]) ? $pay_id[1] : '';
   $result = $api->query($transaction, $pay_id[0], $sub_id, $sub_id);
+
   $data = $api->get_response_data($result->data);
   switch ($data['STATUS']) {
     case '91':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+      $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
       if ($manual == 1) {
         return TRUE;
       }
     break;
     case '9':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+      $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
       if ($manual == 1) {
         return TRUE;
       }
     break;
     case '61':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CANCELED;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED;
+      $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
       commerce_payment_transaction_save($transaction);
       if ($manual == 1) {
         return TRUE;
       }
     break;
   }
+
   if ($manual == 1) {
     return FALSE;
   }
@@ -1623,42 +1728,38 @@ function commerce_ogone_query_update($transaction, $manual = '') {
 /**
  * Returns status code messages.
  */
-function commerce_ogone_status_messages($status) {
+function commerce_ingenico_status_messages($status) {
   $codes = array(
-    '0' => t('Incomplete or invalid.'),
-    '1'	=> t('Cancelled by client.'),
-    '2'	=> t('Authorisation refused.'),
-    '4'	=> t('Order stored.'),
-    '41' => t('Waiting client payment.'),
+    '0' => t('Incomplete or invalid.'), '1' => t('Cancelled by client.'), '2' => t('Authorisation refused.'), '4'	=> t('Order stored.'), '41' => t('Waiting client payment.'),
     '5'	=> t('Authorised.'),
-    '51'	=> t('Authorisation waiting.'),
-    '52'	=> t('Authorisation not known.'),
+    '51' => t('Authorisation waiting.'),
+    '52' => t('Authorisation not known.'),
     '59' => t('Author. to get manually.'),
     '6'	=> t('Authorised and canceled.'),
-    '61'	=> t('Author. deletion waiting.'),
-    '62'	=> t('Author. deletion uncertain.'),
-    '63'	=> t('Author. deletion refused.'),
+    '61' => t('Author. deletion waiting.'),
+    '62' => t('Author. deletion uncertain.'),
+    '63' => t('Author. deletion refused.'),
     '7'	=> t('Payment deleted.'),
-    '71'	=> t('Payment deletion pending.'),
-    '72'	=> t('Payment deletion uncertain.'),
-    '73'	=> t('Payment deletion refused.'),
-    '74'	=> t('Payment deleted (not accepted).'),
-    '75'	=> t('Deletion processed by merchant.'),
+    '71' => t('Payment deletion pending.'),
+    '72' => t('Payment deletion uncertain.'),
+    '73' => t('Payment deletion refused.'),
+    '74' => t('Payment deleted (not accepted).'),
+    '75' => t('Deletion processed by merchant.'),
     '8'	=> t('Refund.'),
-    '81'	=> t('Refund pending.'),
-    '82'	=> t('Refund uncertain.'),
-    '83'	=> t('Refund refused.'),
-    '84'	=> t('Payment declined by the acquirer (will be debited).'),
-    '85'	=> t('Refund processed by merchant.'),
+    '81' => t('Refund pending.'),
+    '82' => t('Refund uncertain.'),
+    '83' => t('Refund refused.'),
+    '84' => t('Payment declined by the acquirer (will be debited).'),
+    '85' => t('Refund processed by merchant.'),
     '9'	=> t('Payment requested.'),
-    '91'	=> t('Payment processing.'),
-    '92'	=> t('Payment uncertain.'),
-    '93'	=> t('Payment refused.'),
-    '94'	=> t('Refund declined by the acquirer.'),
-    '95'	=> t('Payment processed by merchant.'),
-    '97'	=> t('Being processed (intermediate technical status).'),
-    '98'  => t('Being processed (intermediate technical status).'),
-    '99'  => t('Being processed (intermediate technical status).'),
+    '91' => t('Payment processing.'),
+    '92' => t('Payment uncertain.'),
+    '93' => t('Payment refused.'),
+    '94' => t('Refund declined by the acquirer.'),
+    '95' => t('Payment processed by merchant.'),
+    '97' => t('Being processed (intermediate technical status).'),
+    '98' => t('Being processed (intermediate technical status).'),
+    '99' => t('Being processed (intermediate technical status).'),
   );
 
   if (!empty($codes[$status])) {
@@ -1670,7 +1771,7 @@ function commerce_ogone_status_messages($status) {
 /**
  * Return all payment methods.
  */
-function commerce_ogone_payment_methods() {
+function commerce_ingenico_payment_methods() {
   return array(
     'paypal' => array(
       'PM' => 'PAYPAL',
@@ -1728,7 +1829,7 @@ function commerce_ogone_payment_methods() {
       'PM' => 'PostFinance Card',
       'BRAND' => t('AIRPLUS'),
     ),
-    /*Web banking*/
+    /* Web banking */
     'ideal' => array(
       'PM' => 'iDEAL',
       'BRAND' => t('iDEAL'),
@@ -1805,7 +1906,7 @@ function commerce_ogone_payment_methods() {
       'PM' => 'DirectEbankingNL',
       'BRAND' => t('DirectEbankingNL'),
     ),
-    /*Direct Debits*/
+    /* Direct Debits */
     'directdebitsat' => array(
       'PM' => 'Direct Debits AT',
       'BRAND' => t('Direct Debits AT'),
@@ -1818,7 +1919,7 @@ function commerce_ogone_payment_methods() {
       'PM' => 'Direct Debits NL',
       'BRAND' => t('Direct Debits NL'),
     ),
-    /*Offline payment*/
+    /* Offline payment */
     'banktransfer' => array(
       'PM' => 'Bank transfer',
       'BRAND' => t('Bank transfer'),
@@ -1831,12 +1932,12 @@ function commerce_ogone_payment_methods() {
       'PM' => 'Open Invoice NL',
       'BRAND' => t('Open Invoice NL'),
     ),
-    /*Gift Cards*/
+    /* Gift Cards */
     'intersolve' => array(
       'PM' => 'InterSolve',
       'BRAND' => t('InterSolve'),
     ),
-    /*Others*/
+    /* Others */
     'cashex' => array(
       'PM' => 'cashEX',
       'BRAND' => t('cashEX'),
@@ -1849,50 +1950,6 @@ function commerce_ogone_payment_methods() {
       'PM' => 'cashU Direct',
       'BRAND' => t('cashU Direct'),
     ),
-    /*'aurora' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Aurora'),
-    ),
-    'aurore' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Aurore'),
-    ),
-    'billy' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Billy'),
-    ),
-    'cb' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('CB'),
-    ),
-    'cofinoga' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Cofinoga'),
-    ),
-    'cb' => array(
-      'dankort' => 'CreditCard',
-      'BRAND' => t('Dankort'),
-    ),
-    'laser' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Laser'),
-    ),
-    'solo' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('Solo'),
-    ),
-    'uatp' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('UATP'),
-    ),
-    'netreserve' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('NetReserve'),
-    ),
-    'privilege' => array(
-      'PM' => 'CreditCard',
-      'BRAND' => t('PRIVILEGE'),
-    ),*/
   );
 
 }

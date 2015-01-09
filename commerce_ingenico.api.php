@@ -2,7 +2,7 @@
 
 /**
  * @file
- * API and hooks documentation for the Commerce Ogone module.
+ * API and hooks documentation for the Commerce Ingenico module.
  */
 
 use Ogone\Passphrase;
@@ -12,7 +12,7 @@ use Ogone\HashAlgorithm;
 /**
  * Api class providing functions to make api calls.
  */
-class OgoneApi {
+class IngenicoApi {
   const DOMAIN = 'secure.ogone.com';
 
   /**
@@ -40,7 +40,7 @@ class OgoneApi {
     elseif ($sha_type == 'sha_out') {
       $pass_phrase = new Passphrase(trim($this->sha_out));
     }
-    $payment_methods = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+    $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
     $sha_algorithm = $payment_methods['settings']['sha_algorithm'];
     switch ($sha_algorithm) {
       case 'SHA-1':
@@ -67,7 +67,7 @@ class OgoneApi {
     $currency_code = empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code;
     $charge_amount = empty($amount->amount) ? $order->commerce_order_total['und'][0]['amount'] : $amount->amount;
 
-    $payment_methods = commerce_payment_method_instance_load('ogone_direct|commerce_payment_ogone_direct');
+    $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
     //Get the hash algorithm.
     $sha_composer = self::prepare_phrase_to_hash('sha_in');
@@ -112,9 +112,9 @@ class OgoneApi {
       $billing_data['HTTP_ACCEPT'] = $_SERVER['HTTP_ACCEPT'];
       $billing_data['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
       $billing_data['WIN3DS'] = 'MAINW';
-      $billing_data['ACCEPTURL'] = $base_root . '/commerce_ogone/3ds/callback';
-      $billing_data['DECLINEURL'] = $base_root . '/commerce_ogone/3ds/callback';
-      $billing_data['EXCEPTIONURL'] = $base_root . '/commerce_ogone/3ds/callback';
+      $billing_data['ACCEPTURL'] = $base_root . '/commerce_ingenico/3ds/callback';
+      $billing_data['DECLINEURL'] = $base_root . '/commerce_ingenico/3ds/callback';
+      $billing_data['EXCEPTIONURL'] = $base_root . '/commerce_ingenico/3ds/callback';
       $billing_data['PARAMPLUS'] = 'ORDERID=' . $order->order_id;
       $billing_data['COMPLUS'] = 'SUCCESS';
       $billing_data['LANGUAGE'] = $payment_methods['settings']['language_list']['default_language'];
@@ -283,13 +283,13 @@ class OgoneApi {
 }
 
 /**
- * Alter payment data before it is sent to Ogone.
+ * Alter payment data before it is sent to Ingenico.
  *
  * Allows modules to alter the payment data before the data is signed and sent
- * to Ogone.
+ * to Ingenico.
  *
  * @param &$data
- *   The data that is to be sent to Ogone as an associative array.
+ *   The data that is to be sent to Ingenico as an associative array.
  * @param $order
  *   The commerce order object being processed.
  * @param $settings
@@ -298,11 +298,11 @@ class OgoneApi {
  * @return
  *   No return value.
  */
-function hook_commerce_ogone_data_alter(&$data, $order, $settings) {
+function hook_commerce_ingenico_data_alter(&$data, $order, $settings) {
   global $language;
 
-  // Set the dynamic template to be used by Ogone.
-  $data['TP'] = url('checkout/ogone', array('absolute' => TRUE));
+  // Set the dynamic template to be used by Ingenico.
+  $data['TP'] = url('checkout/ingenico', array('absolute' => TRUE));
 
   // For multilingual sites, attempt to use the site's active language rather
   // than the language configured through the payment method settings form.

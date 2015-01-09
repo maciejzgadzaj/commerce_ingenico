@@ -7,7 +7,7 @@
 /**
  * Capture transactions.
  */
-function commerce_ogone_capture_form($form, &$form_state, $order, $transaction) {
+function commerce_ingenico_capture_form($form, &$form_state, $order, $transaction) {
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
 
@@ -54,7 +54,7 @@ function commerce_ogone_capture_form($form, &$form_state, $order, $transaction) 
 /**
  * Validate handler: ensure a valid amount is given.
  */
-function commerce_ogone_capture_form_validate($form, &$form_state) {
+function commerce_ingenico_capture_form_validate($form, &$form_state) {
   $transaction = $form_state['transaction'];
   $amount = $form_state['values']['amount'];
   // Ensure a positive numeric amount has been entered for capture.
@@ -64,15 +64,15 @@ function commerce_ogone_capture_form_validate($form, &$form_state) {
 
   // Ensure the amount is less than or equal to the authorization amount.
   if ($amount > commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code)) {
-    form_set_error('amount', t('You cannot capture more than you authorized through Ogone.'));
+    form_set_error('amount', t('You cannot capture more than you authorized through Ingenico.'));
   }
 
 }
 
 /**
- * Submit handler: process a prior authorization capture via Ogone.
+ * Submit handler: process a prior authorization capture via Ingenico.
  */
-function commerce_ogone_capture_form_submit($form, &$form_state) {
+function commerce_ingenico_capture_form_submit($form, &$form_state) {
   $transaction = $form_state['transaction'];
 
   $order = commerce_order_load($transaction->order_id);
@@ -83,30 +83,31 @@ function commerce_ogone_capture_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
-    $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
+    $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture');
+
     $data = $api->get_response_data($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_goto('admin/commerce/orders');
     }
     elseif ($data['NCERROR'] == '50001127') {
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       $query = $api->query($transaction, $pay_id = $data['PAYID'], $sub_id = $data['PAYIDSUB'] - 1);
-      drupal_set_message('This order has been captured previously.');
+      drupal_set_message(t('This order has been captured previously.'));
       drupal_goto('admin/commerce/orders');
     }
     else {
-      drupal_set_message('An error occur(' . $data['NCERRORPLUS'] . '.');
+      drupal_set_message(t('An error occur(@error_plus)', array('@error_plus' => $data['NCERRORPLUS'])));
       drupal_goto('admin/commerce/orders');
     }
   }
@@ -117,6 +118,7 @@ function commerce_ogone_capture_form_submit($form, &$form_state) {
     $amount->amount = $charge;
     $amount->currency_code = $transaction->currency_code;
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture', $pay_id = '', $sub_id = '', $amount);
+
     //Recover the amount transaction in case of failure of the capture.
     $data = $api->get_response_data($result->data);
 
@@ -125,9 +127,9 @@ function commerce_ogone_capture_form_submit($form, &$form_state) {
       $new_transaction = commerce_payment_transaction_new($transaction->payment_method, $order->order_id);
       $new_transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $new_transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $new_transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $new_transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $new_transaction->currency_code = $transaction->currency_code;
-      $new_transaction->instance_id = 'ogone_direct|commerce_payment_ogone_direct';
+      $new_transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
       $new_transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
 
@@ -143,7 +145,7 @@ function commerce_ogone_capture_form_submit($form, &$form_state) {
 /**
  * Provide refund functionality.
  */
-function commerce_ogone_refund_form($form, &$form_state, $order, $transaction) {
+function commerce_ingenico_refund_form($form, &$form_state, $order, $transaction) {
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
 
@@ -186,7 +188,7 @@ function commerce_ogone_refund_form($form, &$form_state, $order, $transaction) {
 /**
  * Validate handler: ensure a valid amount is given.
  */
-function commerce_ogone_refund_form_validate($form, &$form_state) {
+function commerce_ingenico_refund_form_validate($form, &$form_state) {
   $transaction = $form_state['transaction'];
   $amount = $form_state['values']['amount'];
   // Ensure a positive numeric amount has been entered for capture.
@@ -196,15 +198,15 @@ function commerce_ogone_refund_form_validate($form, &$form_state) {
 
   // Ensure the amount is less than or equal to the authorization amount.
   if ($amount > commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code)) {
-    form_set_error('amount', t('You refund more than you captured through Ogone.'));
+    form_set_error('amount', t('You refund more than you captured through Ingenico.'));
   }
 
 }
 
 /**
- * Submit handler: process a prior authorization capture via Ogone.
+ * Submit handler: process a prior authorization capture via Ingenico.
  */
-function commerce_ogone_refund_form_submit($form, &$form_state) {
+function commerce_ingenico_refund_form_submit($form, &$form_state) {
 
   $transaction = $form_state['transaction'];
   $order = commerce_order_load($transaction->order_id);
@@ -213,27 +215,28 @@ function commerce_ogone_refund_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
 
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     //Search for sub pay id.
     if (strstr($transaction->remote_id, '/') != FALSE ) {
       $pay_id_pieces = explode('/', $transaction->remote_id);
       $pay_id = $pay_id_pieces[0];
-      $result = $api->crossPayment($order, $transaction, $type = 'RFS', $operation = 'refund', $pay_id);
+      $result = $api->crossPayment($order, $transaction, $type = 'RFD', $operation = 'refund', $pay_id);
     }
     else {
-      $result = $api->crossPayment($order, $transaction, $type = 'RFS', $operation = 'refund');
+      $result = $api->crossPayment($order, $transaction, $type = 'RFD', $operation = 'refund');
     }
     $data = $api->get_response_data($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_REFUND;
+      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_REFUND;
       $transaction->instance_id = $transaction->instance_id;
       $transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
+      drupal_set_message(t('Refund was successful.'), 'status');
       drupal_goto('admin/commerce/orders');
     }
   }
@@ -246,10 +249,10 @@ function commerce_ogone_refund_form_submit($form, &$form_state) {
     if (strstr($transaction->remote_id, '/') != FALSE ) {
       $pay_id_pieces = explode('/', $transaction->remote_id);
       $pay_id = $pay_id_pieces[0];
-      $result = $api->crossPayment($order, $transaction, $type = 'RFS', $operation = 'refund', $pay_id);
+      $result = $api->crossPayment($order, $transaction, $type = 'RFD', $operation = 'refund', $pay_id, '', $amount);
     }
     else {
-      $result = $api->crossPayment($order, $transaction, $type = 'RFS', $operation = 'refund');
+      $result = $api->crossPayment($order, $transaction, $type = 'RFD', $operation = 'refund');
     }
 
     $transaction->amount = $transaction->amount  - commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
@@ -262,12 +265,13 @@ function commerce_ogone_refund_form_submit($form, &$form_state) {
       $new_transaction = commerce_payment_transaction_new($transaction->payment_method, $order->order_id);
       $new_transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $new_transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $new_transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_REFUND;
+      $new_transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_REFUND;
       $new_transaction->instance_id = $transaction->instance_id;
       $new_transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       commerce_payment_transaction_save($transaction);
+      drupal_set_message(t('Refund was successful.'), 'status');
       drupal_goto('admin/commerce/orders');
     }
   }
@@ -277,7 +281,7 @@ function commerce_ogone_refund_form_submit($form, &$form_state) {
 /**
  * Provide cancel transaction functionality.
  */
-function commerce_ogone_cancel_form($form, &$form_state, $order, $transaction) {
+function commerce_ingenico_cancel_form($form, &$form_state, $order, $transaction) {
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
   $form['flag'] = array(
@@ -300,10 +304,10 @@ function commerce_ogone_cancel_form($form, &$form_state, $order, $transaction) {
 /**
  * Cancel transaction.
  */
-function commerce_ogone_cancel_form_submit($form, &$form_state) {
+function commerce_ingenico_cancel_form_submit($form, &$form_state) {
     $transaction = $form_state['transaction'];
     $order = $form_state['order'];
-    $api = commerce_ogone_api_object();
+    $api = commerce_ingenico_api_object();
     //Perform maintenance request.
     //Search for sub pay id.
     if (strstr($transaction->remote_id, '/') != FALSE ) {
@@ -322,7 +326,7 @@ function commerce_ogone_cancel_form_submit($form, &$form_state) {
     }
     else {
       if ($result->status_message == 'OK' and $result->code == 200 and $response_data['NCERROR'] == 0) {
-        $transaction->status = COMMERCE_PAYMENT_STATUS_OGONE_CANCELED;
+        $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED;
         $transaction->message .= '<br/>' . 'The transaction have been canceled.';
         commerce_payment_transaction_save($transaction);
         drupal_set_message(t('The transaction has been canceled.'), 'status');
@@ -334,7 +338,7 @@ function commerce_ogone_cancel_form_submit($form, &$form_state) {
 /**
  * Provides delete transaction functionality.
  */
-function commerce_ogone_transaction_delete_form($form, &$form_state, $order, $transaction) {
+function commerce_ingenico_transaction_delete_form($form, &$form_state, $order, $transaction) {
   $form_state['transaction'] = $transaction;
   $form_state['order'] = $order;
 
@@ -354,14 +358,14 @@ function commerce_ogone_transaction_delete_form($form, &$form_state, $order, $tr
 /**
  * Delete transaction.
  */
-function commerce_ogone_transaction_delete_form_submit($form, &$form_state) {
+function commerce_ingenico_transaction_delete_form_submit($form, &$form_state) {
   $transaction = $form_state['transaction'];
   $order = $form_state['order'];
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   //Perform maintenance request.
   //Search for sub pay id.
-  //Check if the transaction is Ogone transaction.
-  if ($transaction->payment_method == 'ogone_direct' or $transaction->payment_method == 'ogone_offsite') {
+  //Check if the transaction is Ingenico transaction.
+  if ($transaction->payment_method == 'ingenico_direct' or $transaction->payment_method == 'ingenico_offsite') {
     if (strstr($transaction->remote_id, '/') != FALSE ) {
       $pay_id_pieces = explode('/', $transaction->remote_id);
       $pay_id = $pay_id_pieces[0];
@@ -403,16 +407,16 @@ function commerce_ogone_transaction_delete_form_submit($form, &$form_state) {
 /**
  * Automatically submits the order and transaction for an update.
  */
-function commerce_ogone_update_redirect($order, $transaction) {
+function commerce_ingenico_update_redirect($order, $transaction) {
   $form_state['values']['order'] = $order;
   $form_state['values']['transaction'] = $transaction;
-  drupal_form_submit('commerce_ogone_update_form', $form_state);
+  drupal_form_submit('commerce_ingenico_update_form', $form_state);
 }
 
 /**
  * Form to update transaction.
  */
-function commerce_ogone_update_form($form, &$form_state) {
+function commerce_ingenico_update_form($form, &$form_state) {
   $form['order'] = array(
     '#type' => 'hidden',
     '#title' => t('Order'),
@@ -429,10 +433,10 @@ function commerce_ogone_update_form($form, &$form_state) {
 /**
  * Submit the query request for a single transaction update.
  */
-function commerce_ogone_update_form_submit($form, &$form_state) {
+function commerce_ingenico_update_form_submit($form, &$form_state) {
   $order = $form_state['values']['order'];
   $transaction = $form_state['values']['transaction'];
-  $result = commerce_ogone_query_update($transaction, 1);
+  $result = commerce_ingenico_query_update($transaction, 1);
   if ($result == TRUE) {
     drupal_set_message(t('The transaction was updated.'), 'status');
   }

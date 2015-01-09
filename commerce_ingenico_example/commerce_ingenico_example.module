@@ -8,9 +8,9 @@
 /**
  * Implements hook_views_api().
  */
-function commerce_ogone_example_views_api() {
+function commerce_ingenico_example_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'commerce_ogone_example') . '/includes/views',
+    'path' => drupal_get_path('module', 'commerce_ingenico_example') . '/includes/views',
   );
 }

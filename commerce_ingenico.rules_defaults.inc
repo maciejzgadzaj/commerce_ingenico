@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * Defines default example rule for Ogone.
+ * Defines default example rule for Ingenico.
  */
 
 /**
  * Implements hook_default_rules_configuration().
  */
-function commerce_ogone_default_rules_configuration() {
+function commerce_ingenico_default_rules_configuration() {
    //Reaction rule.
   $rule = rules_reaction_rule();
   $rule->label = t('Compare remote status with local');

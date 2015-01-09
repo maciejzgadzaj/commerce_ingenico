@@ -1,20 +1,20 @@
 <?php
 /**
  * @file
- * Creates requirement for Ogone library.
+ * Creates requirement for Ingenico library.
  */
 
 /**
  * Implements hook_requirements().
  * Display installed status on the site report screen.
  */
-function commerce_ogone_requirements($phase) {
+function commerce_ingenico_requirements($phase) {
   $requirements = array();
 
   // Ensure translations don't break at install time.
   $t = get_t();
 
-  $path_ogone = $_SERVER['DOCUMENT_ROOT'] . '/sites/all/libraries/ogone';
+  $path_ingenico = $_SERVER['DOCUMENT_ROOT'] . '/sites/all/libraries/ogone';
   //Checks for the library during instalation process.
   if ($phase == 'install' && module_exists('libraries')) {
     $library = libraries_get_libraries();
@@ -23,7 +23,7 @@ function commerce_ogone_requirements($phase) {
       $library_path = $value;
     }
     // Check if the expected library path exists.
-    if (!empty($library_name) and $library_name == 'ogone' && (file_exists($path_ogone) === TRUE or (!empty($library_path) and file_exists($library_path) == TRUE))) {
+    if (!empty($library_name) and $library_name == 'ogone' && (file_exists($path_ingenico) === TRUE or (!empty($library_path) and file_exists($library_path) == TRUE))) {
       $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
@@ -31,7 +31,7 @@ function commerce_ogone_requirements($phase) {
       );
       return $requirements;
     }
-    elseif (empty($library) or file_exists($path_ogone) != TRUE) {
+    elseif (empty($library) or file_exists($path_ingenico) != TRUE) {
       $requirements['ogone'] = array(
         'title' => $t('Ogone PHP library'),
         'description' => $t('Ogone PHP library is required.'),
@@ -41,11 +41,11 @@ function commerce_ogone_requirements($phase) {
           See the <a href="@help_url">project page</a> for install instructions.
           <br/>
           Download the required libraries from
-          <a href="@library_url">the Ogone GitHub project</a>
+          <a href="@library_url">The ingenico GitHub project</a>
           and place it in <code>@install_path</code>',
           array(
             '@library_url' => empty($library['download url']) ? 'https://github.com/marlon-be/marlon-ogone' : $library['download url'],
-            '@help_url' => url('https://drupal.org/project/commerce_ogone'),
+            '@help_url' => url('https://drupal.org/project/commerce_ingenico'),
             '@install_path' => 'sites/all/libraries/ogone',
           )
         ),
@@ -67,7 +67,7 @@ function commerce_ogone_requirements($phase) {
       );
       return $requirements;
     }
-    elseif (empty($library) or (file_exists($path_ogone) != TRUE and file_exists($library_path) !== TRUE)) {
+    elseif (empty($library) or (file_exists($path_ingenico) != TRUE and file_exists($library_path) !== TRUE)) {
       $requirements['ogone'] = array(
         'title' => $t('Ogone PHP library'),
         'description' => $t('Ogone PHP library is required.'),
@@ -77,11 +77,11 @@ function commerce_ogone_requirements($phase) {
           See the <a href="@help_url">project page</a> for install instructions.
           <br/>
           Download the required libraries from
-          <a href="@library_url">the Ogone GitHub project</a>
+          <a href="@library_url">The Ingenico GitHub project</a>
           and place it in <code>@install_path</code>',
           array(
             '@library_url' => empty($library['download url']) ? 'https://github.com/marlon-be/marlon-ogone' : $library['download url'],
-            '@help_url' => url('https://drupal.org/project/commerce_ogone'),
+            '@help_url' => url('https://drupal.org/project/commerce_ingenico'),
             '@install_path' => 'sites/all/libraries/ogone',
           )
         ),

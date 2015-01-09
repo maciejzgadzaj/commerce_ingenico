@@ -1,16 +1,16 @@
 <?php
 /**
  * @file
- * commerce_ogone_direct.inc
+ * commerce_ingenico_direct.inc
  * Functions for Direct integration.
  */
 
 /**
  * Payment method callback: checkout form.
  */
-function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
-  if ($payment_method['method_id'] == 'ogone_offsite' && $payment_method['settings']['modify_card_types'] === 1) {
-    $all_payment_methods = commerce_ogone_payment_methods();
+function commerce_ingenico_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  if ($payment_method['method_id'] == 'ingenico_offsite' && $payment_method['settings']['modify_card_types'] === 1) {
+    $all_payment_methods = commerce_ingenico_payment_methods();
     foreach ($payment_method['settings']['payment_method_types'] as $key => $value) {
       if (!empty($value)) {
         $cards[$key] = $all_payment_methods[$key]['BRAND'];
@@ -22,24 +22,12 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
       '#title' => t('Payment method'),
       '#options' => $cards,
     );
-    /*if ($payment_method['method_id'] == 'ogone_offsite') {
-      $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
-      $form['credit_card']['owner'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Card owner'),
-        '#default_value' => $customer_profile->commerce_customer_address['und'][0]['name_line'],
-        '#attributes' => array('autocomplete' => 'off'),
-        '#required' => TRUE,
-        '#maxlength' => 64,
-        '#size' => 32,
-      );
-    }*/
 
     return $form;
   }
-  elseif ($payment_method['method_id'] == 'ogone_direct') {
+  elseif ($payment_method['method_id'] == 'ingenico_direct') {
     module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
-    $card_types = commerce_ogone_direct_all_card_names();
+    $card_types = commerce_ingenico_direct_all_card_names();
     foreach ($card_types as $key => $value) {
       $cards_id[] = $key;
     }
@@ -71,7 +59,7 @@ function commerce_ogone_submit_form($payment_method, $pane_values, $checkout_pan
 /**
  * Get all card types.
  */
-function commerce_ogone_direct_all_card_names() {
+function commerce_ingenico_direct_all_card_names() {
   return array(
     'visa'    => t('Visa'),
     'mastercard'      => t('Mastercard'),
@@ -85,8 +73,8 @@ function commerce_ogone_direct_all_card_names() {
 /**
  * Payment method callback: checkout form validation.
  */
-function commerce_ogone_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-  if ($payment_method['method_id'] == 'ogone_offsite') {
+function commerce_ingenico_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  if ($payment_method['method_id'] == 'ingenico_offsite') {
     return;
   }
   else {
@@ -105,13 +93,13 @@ function commerce_ogone_submit_form_validate($payment_method, $pane_form, $pane_
  * Validates cards for Bancontact/Mistercash cards.
  */
 function commerce_payment_credit_card_validate_bc($payment_method, $card_type) {
-   if ($payment_method['method_id'] == 'ogone_direct') {
+  if ($payment_method['method_id'] == 'ingenico_direct') {
     //Check the card number.
     $first_int = intval(substr($card_type['number'], 0, 8));
     $second_int = intval(substr($card_type['number'], 8, 16));
     if ($card_type['type'] === 'bancontact/mistercash' and (strlen($card_type['number']) == 16 and is_int($first_int) and $first_int > 0 and is_int($second_int) and $second_int > 0)) {
       if (substr($first_int, 0, 4) == 6573 and substr($first_int, -4, 8) >= 0300 and substr($first_int, -4, 8) <= 5099) {
-         drupal_set_message(t('test card inside'), 'status');
+        drupal_set_message(t('test card inside'), 'status');
         $return = TRUE;
         return TRUE;
       }
@@ -181,82 +169,76 @@ function commerce_payment_credit_card_validate_bc($payment_method, $card_type) {
 /**
  * Submit the payment request.
  */
-function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
   global $base_root;
-  if ($payment_method['method_id'] == 'ogone_offsite' /*&& $payment_method['settings']['modify_card_types'] == 1*/) {
+  if ($payment_method['method_id'] == 'ingenico_offsite') {
     if (!empty($pane_values['credit_card']['type'])) {
       $form_state_value['value']['type'] = $pane_values['credit_card']['type'];
-
-    foreach (commerce_ogone_payment_methods() as $key => $value) {
-      if ($key == $form_state_value['value']['type']) {
-        $form_state_value['value']['PM'] = $value['PM'];
-      }
-    }
-  }
-
-      //Check if the user selected other payment method.
-    /*if ($pane_values['credit_card']['type'] == 'other') {
-      $form_to_submit = array();
-      foreach ($new_form as $k => $v) {
-        if ($k != 'BRAND' and $k != 'PM') {
-          $form_to_submit[$k] = $v;
+      foreach (commerce_ingenico_payment_methods() as $key => $value) {
+        if ($key == $form_state_value['value']['type']) {
+          $form_state_value['value']['PM'] = $value['PM'];
         }
       }
-      $new_form = array();
-      $new_form = $form_to_submit;
-    }*/
-
-    $result = commerce_ogone_redirect_alter_form($pane_form, $form_state_value, $order);
-    foreach($result as $key => $value) {
-      if($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
-           $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' || $key == 'SHASign') {
-           $new_form[$key] = $value['#value'];
-      }
     }
 
-    //dsm($pane_values, 'pane'); return false;
+    $result = commerce_ingenico_redirect_alter_form($pane_form, $form_state_value, $order);
+    foreach ($result as $key => $value) {
+      if ($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+        $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' ||
+        $key == 'OWNERADDRESS' || $key == 'OWNERZIP' || $key == 'OWNERTOWN' || $key == 'OWNERCTY' ||
+        $key == 'ECOM_BILLTO_POSTAL_CITY' || $key == 'ECOM_BILLTO_POSTAL_COUNTRYCODE' || $key == 'ECOM_BILLTO_POSTAL_NAME_FIRST' || $key == 'ECOM_BILLTO_POSTAL_NAME_LAST' ||
+        $key == 'ECOM_BILLTO_POSTAL_POSTALCODE' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE1' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE2' || $key == 'SHASign' ||
+        $key == 'ECOM_SHIPTO_COMPANY' || $key == 'ECOM_SHIPTO_ONLINE_EMAIL' || $key == 'ECOM_SHIPTO_POSTAL_CITY' || $key == 'ECOM_SHIPTO_POSTAL_COUNTRYCODE' ||
+        $key == 'ECOM_SHIPTO_POSTAL_NAME_FIRST' || $key == 'ECOM_SHIPTO_POSTAL_NAME_LAST' || $key == 'ECOM_SHIPTO_POSTAL_POSTALCODE' || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE1' ||
+        $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE2' || $key == 'SHASign') {
+        $new_form[$key] = $value['#value'];
+      }
+    }
+    variable_set('params_online', $new_form);
     drupal_goto($result['#action'], array('query' => $new_form));
   }
   else {
-    $customer_profile = commerce_ogone_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
+    $customer_profile = commerce_ingenico_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
     global $base_root;
-    $api = commerce_ogone_api_object();
+    $api = commerce_ingenico_api_object();
     $result = $api->directPayments($customer_profile, $order, $pane_values);
-    // drupal_goto('commerce_ogone/test/test', array( 'result' => $result));
+
+    variable_set('res_test', $result);
+    // drupal_goto('commerce_ingenico/test/test', array( 'result' => $result));
     $data = $api->get_response_data($result->data);
     if ($data['NCERROR'] != 0) {
-      $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+      $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
       $query_return = $api->query($transaction, $data['PAYID'], $sub_id = '', $order = '');
       $query_data = $api->get_response_data($query_return->data);
       if ($query_data['NCERROR'] != 0) {
         if (strstr($query_data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
           if ($payment_method['settings']['logs'] == 0) {
-            watchdog('commerce_ogone', "The IP address from which a request was sent is not an IP address the
+            watchdog('commerce_ingenico', "The IP address from which a request was sent is not an IP address the
                       merchant had entered in the IP address field of the Data and origin verification tab.
-                      Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+                      Go to your account in Ingenico and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
           }
-          drupal_set_message('The IP address from which a request was sent is not an IP address the
+          drupal_set_message(t('The IP address from which a request was sent is not an IP address the
                     merchant had entered in the IP address field of the Data and origin verification tab.
-                    Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.', 'error');
+                    Go to your account in Ingenico and then Technical information->Data and origin verification and set your IP Address.'), 'error');
           return FALSE;
         }
         elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/1/s')) {
           if ($payment_method['settings']['logs'] == 0) {
-            watchdog('commerce_ogone', "The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+            watchdog('commerce_ingenico', "The SHASIGN used in the request is different than the SHASIGN calculated on the Ingenico site please verify your parameters and SHA-IN phrases entered on your site and Ingenico site.", array(), WATCHDOG_ERROR);
           }
-          drupal_set_message(t('The SHASIGN used in the request is different than the SHASIGN calculated on the Ogone site please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
+          drupal_set_message(t('The SHASIGN used in the request is different than the SHASIGN calculated on the Ingenico site please verify your parameters and SHA-IN phrases entered on your site and Ingenico site.'), 'error');
           return FALSE;
         }
         elseif (strstr($query_data['NCERRORPLUS'], 'unknown order/0/s')) {
           if ($payment_method['settings']['logs'] == 0) {
-            watchdog('commerce_ogone', "The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.", array(), WATCHDOG_ERROR);
+            watchdog('commerce_ingenico', "The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ingenico site. Please verify your parameters and SHA-IN phrases entered on your site and Ingenico site.", array(), WATCHDOG_ERROR);
           }
-          drupal_set_message(t('The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ogone site. Please verify your parameters and SHA-IN phrases entered on your site and Ogone site.'), 'error');
+          drupal_set_message(t('The SHASIGN used in the request is empty or wrong than the SHASIGN calculated on the Ingenico site. Please verify your parameters and SHA-IN phrases entered on your site and Ingenico site.'), 'error');
           return FALSE;
         }
         else {
           if ($payment_method['settings']['logs'] == 0) {
-            watchdog('commerce_ogone', "There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: %message", array('%message' => $query_data['NCERRORPLUS']), WATCHDOG_ERROR);
+            watchdog('commerce_ingenico', "There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: %message", array('%message' => $query_data['NCERRORPLUS']), WATCHDOG_ERROR);
           }
           drupal_set_message(t('There is a problem with your request, if the problem persist please contact your site administrator. Message sent back: @message', array('@message' => $query_data['NCERRORPLUS'])), 'error');
           return FALSE;
@@ -264,9 +246,9 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
       }
     }
     if ($payment_method['settings']['3d_secure'] == 0 and $data['STATUS'] == '5') {
-      //Delete the transaction on Ogone site.
+      //Delete the transaction on Ingenico site.
 
-      drupal_goto('commerce_ogone/3ds/callback', array('query' => array(
+      drupal_goto('commerce_ingenico/3ds/callback', array('query' => array(
         'STATUS' => !empty($data['STATUS']) ? $data['STATUS'] : '',
         'PAYID' => !empty($data['PAYID']) ? $data['PAYID'] : '',
         'ORDERID' => !empty($order->order_id) ? $order->order_id : '',
@@ -281,9 +263,9 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
 
     if (!empty($data['NCERRORPLUS']) and strstr($data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
       if ($payment_method['settings']['logs'] == 0) {
-        watchdog('commerce_ogone', "Your IP Address is not set on Ogone site. Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
+        watchdog('commerce_ingenico', "Your IP Address is not set on Ingenico site. Go to your account in Ingenico and then Technical information->Data and origin verification and set your IP Address.", array(), WATCHDOG_ERROR);
       }
-      $error = 'Your IP Address is not set on Ogone site. Go to your account in Ogone and then Technical information->Data and origin verification and set your IP Address.';
+      $error = 'Your IP Address is not set on Ingenico site. Go to your account in Ingenico and then Technical information->Data and origin verification and set your IP Address.';
       drupal_set_message(t('@error', array('@error' => $error)), 'error');
       drupal_goto($base_root);
     }
@@ -294,7 +276,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
         $tags[$key] = (string)$value;
       }
 
-      drupal_goto('commerce_ogone/3d_secure', array('query' => array(
+      drupal_goto('commerce_ingenico/3d_secure', array('query' => array(
         'result' => $tags['HTML_ANSWER'])
       ));
 
@@ -302,35 +284,35 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
     }
 
     if ($result->status_message and $result->code == '200' and $data['NCERROR'] == 0 and ($data['STATUS'] == 5 or $data['STATUS'] == 9) ) {
-      $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+      $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
       $transaction->instance_id = $payment_method['instance_id'];
       $transaction->remote_id = !empty($data['PAYID']) ? $data['PAYID'] : '';
       $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
       $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
-      $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_OGONE_CAPTURED;
+      $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       //$transaction->message = 'Payment requested';
       $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+      $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
       $transaction->remote_status = $data['STATUS'];
       $transaction->payload = $data;
       commerce_payment_transaction_save($transaction);
     }
     else {
-      $transaction = commerce_payment_transaction_new('ogone_direct', $order->order_id);
+      $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
       $transaction->instance_id = $payment_method['instance_id'];
       $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
       $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
       $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
-      $transaction->message = commerce_ogone_status_messages($data['STATUS']);
+      $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
       $transaction->message_variables = array('@name' => $customer_profile[0]->commerce_customer_address['und'][0]['name_line']);
       $transaction->remote_status = $data['STATUS'];
       $transaction->payload = $data;
       commerce_payment_transaction_save($transaction);
     }
-    $payment_methods = commerce_payment_method_instance_load('ogone_onsite|commerce_payment_ogone_onsite');
+    $payment_methods = commerce_payment_method_instance_load('ingenico_onsite|commerce_payment_ingenico_onsite');
     $payment_method_account = explode('|', $payment_methods['settings']['account']);
 
-   // drupal_goto('commerce_ogone/test/test', array( 'result' => $result));
+   // drupal_goto('commerce_ingenico/test/test', array( 'result' => $result));
   }
   return $result;
 }
@@ -338,7 +320,7 @@ function commerce_ogone_submit_form_submit($payment_method, $pane_form, $pane_va
 /**
  * Loads profile by profile_id.
  */
-function commerce_ogone_customer_profile_load($profile_id) {
+function commerce_ingenico_customer_profile_load($profile_id) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_customer_profile')
   ->propertyCondition('profile_id', $profile_id)

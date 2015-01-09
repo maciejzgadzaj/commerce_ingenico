@@ -9,10 +9,10 @@
 /**
  * Implements hook_rules_action_info().
  */
-function commerce_ogone_rules_action_info() {
+function commerce_ingenico_rules_action_info() {
   $actions = array();
 
-  //The action for sync transactions between ogone site and drupal.
+  //The action for sync transactions between ingenico site and drupal.
   $actions['perform_query'] = array(
     'label' => t('Compare status of remote transactions'),
     'parameter' => array(
@@ -23,7 +23,7 @@ function commerce_ogone_rules_action_info() {
     ),
     'group' => t('Commerce'),
     'callbacks' => array(
-      'execute' => 'commerce_ogone_query_update',
+      'execute' => 'commerce_ingenico_query_update',
     ),
   );
 
@@ -37,9 +37,9 @@ function commerce_ogone_rules_action_info() {
         'description' => t('You can enter date from which to start capturing transactions or enter negative number of days to start capturing from the days before today (ex. -1 day, -2 days, -3 days …) or enter "now" to capture all transactions from today.'),
       ),
     ),
-    'group' => t('Ogone'),
+    'group' => t('Ingenico'),
     'callbacks' => array(
-      'execute' => 'commerce_ogone_batch_rule',
+      'execute' => 'commerce_ingenico_batch_rule',
     ),
   );
 

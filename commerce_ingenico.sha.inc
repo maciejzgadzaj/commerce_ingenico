@@ -9,15 +9,15 @@
 /**
  * Validate the feedback with the SHA signature
  */
-function commerce_ogone_feedback_valid_sha($feedback) {
+function commerce_ingenico_feedback_valid_sha($feedback) {
   $incoming_sha = '';
-  foreach (commerce_ogone_sha_out_parameters() as $param) {
+  foreach (commerce_ingenico_sha_out_parameters() as $param) {
     if (isset($feedback[$param]) && $feedback[$param] !== '') {
       $incoming_sha[$param] = $feedback[$param];
     }
   }
   //Get the right sha algorithm.
-  $api = commerce_ogone_api_object();
+  $api = commerce_ingenico_api_object();
   $sha_composer = $api->prepare_phrase_to_hash('sha_out');
   $sha_out = $sha_composer->compose($incoming_sha);
   return strtoupper($sha_out) === $feedback['SHASIGN'];
@@ -26,7 +26,7 @@ function commerce_ogone_feedback_valid_sha($feedback) {
 /**
  * Get a list of valid SHA out parameters
  */
-function commerce_ogone_sha_out_parameters() {
+function commerce_ingenico_sha_out_parameters() {
   return array('AAVADDRESS', 'AAVCHECK', 'AAVZIP', 'ACCEPTANCE', 'ALIAS', 'AMOUNT',
     'BIN', 'BRAND', 'CARDNO', 'CCCTY', 'CN', 'COMPLUS', 'CREATION_STATUS', 'CURRENCY',
     'CVCCHECK', 'DCC_COMMPERCENTAGE', 'DCC_CONVAMOUNT', 'DCC_CONVCCY', 'DCC_EXCHRATE',

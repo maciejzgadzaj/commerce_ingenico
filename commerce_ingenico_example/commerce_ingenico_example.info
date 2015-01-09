@@ -1,0 +1,10 @@
+name = Commerce Ingenico Examples
+description = "Example of creating auto capture functionality"
+core = 7.x
+php = 5.3
+package = Commerce Ingenico
+
+dependencies[] = commerce_ingenico
+dependencies[] = views_bulk_operations
+
+files[] = commerce_ingenico_example.rules_defaults.inc

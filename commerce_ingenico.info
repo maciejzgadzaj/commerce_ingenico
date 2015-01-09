@@ -1,5 +1,5 @@
-name = Commerce Ogone
-description = Implements Ogone payment services for use with Drupal Commerce.
+name = Commerce Ingenico
+description = Implements Ingenico payment services for use with Drupal Commerce.
 package = Commerce (contrib)
 
 ;Depend on libraries module.
@@ -14,5 +14,4 @@ dependencies[] = commerce_order_ui
 core = 7.x
 configure = admin/commerce/config/payment-methods
 
-project = "commerce_ogone"
-datestamp = "1394443281"
+project = "commerce_ingenico"

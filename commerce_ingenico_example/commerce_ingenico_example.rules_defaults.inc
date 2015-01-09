@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * Defines default example rule for Ogone.
+ * Defines default example rule for Ingenico.
  */
 
 /**
  * Implements hook_default_rules_configuration().
  */
-function commerce_ogone_example_default_rules_configuration() {
+function commerce_ingenico_example_default_rules_configuration() {
   //Component.
   $rule = rule(array(
       'component_transactions' => array('label' => 'component transactions', 'type' => 'commerce_payment_transaction')

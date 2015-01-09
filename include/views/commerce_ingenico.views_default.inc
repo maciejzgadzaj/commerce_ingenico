@@ -8,7 +8,7 @@
 /**
  * Implements hook_views_default_views().
  */
-function commerce_ogone_views_default_views() {
+function commerce_ingenico_views_default_views() {
   $views = array();
 
    //Transactions in pending status
@@ -160,8 +160,8 @@ function commerce_ogone_views_default_views() {
   $handler->display->display_options['filters']['payment_method']['table'] = 'commerce_payment_transaction';
   $handler->display->display_options['filters']['payment_method']['field'] = 'payment_method';
   $handler->display->display_options['filters']['payment_method']['value'] = array(
-    'ogone_offsite' => 'ogone_offsite',
-    'ogone_direct' => 'ogone_direct',
+    'ingenico_offsite' => 'ingenico_offsite',
+    'ingenico_direct' => 'ingenico_direct',
   );
 
   $views[$view->name] = $view;
