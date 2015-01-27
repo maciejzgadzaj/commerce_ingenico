@@ -241,13 +241,31 @@ function commerce_ingenico_cards_redirect_callback() {
       $transaction->remote_status = $_GET['STATUS'];
       $transaction->created = $order->created;
       $transaction->payload = $feedback;
-      commerce_payment_transaction_save($transaction);
+      if (!empty($user->uid)) {
+        commerce_payment_transaction_save($transaction);
+      }
     }
     //If successeful operation go to checkout complete.
     return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
   }
   else {
     drupal_set_message(t('The order# @order was cancelled.', array('@order' => $order->order_id)), 'error');
+    $transaction = commerce_payment_transaction_new('ingenico_offsite', $order->order_id);
+    $transaction->uid = $user->uid;
+    $transaction->order_id = $order->order_id;
+    $transaction->payment_method = 'ingenico_offsite';
+    $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
+    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+    $transaction->message = commerce_ingenico_status_messages($_GET['STATUS']);
+    $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
+    $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
+    $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED;
+    $transaction->remote_status = $_GET['STATUS'];
+    $transaction->created = $order->created;
+    $transaction->payload = (!empty($feedback)) ? $feedback : $_GET;
+    if (!empty($user->uid)) {
+      commerce_payment_transaction_save($transaction);
+    }
     if ($payment_method['settings']['logs'] == 0 ) {
       watchdog('commerce_ingenico', "The order# @order was cancelled.", array('@order' => $order->order_id), WATCHDOG_ERROR);
     }
