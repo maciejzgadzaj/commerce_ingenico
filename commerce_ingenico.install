@@ -14,7 +14,7 @@ function commerce_ingenico_requirements($phase) {
   // Ensure translations don't break at install time.
   $t = get_t();
 
-  $path_ingenico = $_SERVER['DOCUMENT_ROOT'] . '/sites/all/libraries/ogone';
+  $path_ingenico = libraries_get_path('ogone');
   //Checks for the library during instalation process.
   if ($phase == 'install' && module_exists('libraries')) {
     $library = libraries_get_libraries();
