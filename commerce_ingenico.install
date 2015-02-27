@@ -24,7 +24,6 @@ function commerce_ingenico_requirements($phase) {
     }
     // Check if the expected library path exists.
     if (!empty($library_name) and $library_name == 'ogone' && (file_exists($path_ingenico) === TRUE or (!empty($library_path) and file_exists($library_path) == TRUE))) {
-      $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
         'severity' => REQUIREMENT_OK,
@@ -59,7 +58,6 @@ function commerce_ingenico_requirements($phase) {
 
     // Check if the expected library path exists.
     if (!empty($library['installed'])) {
-      $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
         'value' => $t('Ogone PHP library @version is available.', array('@version' => $library['version'])),
