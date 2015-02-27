@@ -443,5 +443,5 @@ function commerce_ingenico_update_form_submit($form, &$form_state) {
   elseif ($result == FALSE) {
     drupal_set_message(t('The transaction was not updated'), 'error');
   }
-  drupal_goto(t('admin/commerce/orders/@transaction/payment', array('@transaction' => $transaction->transaction_id)));
+  drupal_goto(t('admin/commerce/orders/@order/payment', array('@order' => $order->order_id)));
 }
