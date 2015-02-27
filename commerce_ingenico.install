@@ -55,7 +55,7 @@ function commerce_ingenico_requirements($phase) {
   }
   //Check for the library during runtime.
   if ($phase == 'runtime' && module_exists('libraries')) {
-    $library = libraries_detect('Ogone');
+    $library = libraries_detect('ogone');
 
     // Check if the expected library path exists.
     if (!empty($library['installed'])) {
