@@ -1162,7 +1162,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $url = variable_get('commerce_ingenico_provider_url', 'https://secure.ogone.com/ncol/');
   $url .=  $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
-  $api = commerce_ingenico_api_object();
+  $api = commerce_ingenico_api_object($settings);
   //Get the hash algorithm.
   $sha_composer = $api->prepare_phrase_to_hash('sha_in');
   //Hash the sha phrace with the billing data.
