@@ -34,7 +34,7 @@ class IngenicoApi {
     $library = libraries_info('ogone');
     $load_library = libraries_load('ogone');
     libraries_load_files($load_library);
-    if ($sha_type = 'sha_in') {
+    if ($sha_type == 'sha_in') {
       $pass_phrase = new Passphrase(trim($this->sha_in));
     }
     elseif ($sha_type == 'sha_out') {
