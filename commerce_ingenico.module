@@ -1164,7 +1164,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $form['#action'] = $url;
   $api = commerce_ingenico_api_object($settings);
   //Get the hash algorithm.
-  $sha_composer = $api->prepare_phrase_to_hash('sha_in');
+  $sha_composer = $api->prepare_phrase_to_hash('sha_in', $settings['sha_algorithm']);
   //Hash the sha phrace with the billing data.
   $shasign = $sha_composer->compose($data);
 
