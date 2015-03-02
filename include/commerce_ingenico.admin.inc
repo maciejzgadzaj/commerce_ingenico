@@ -95,7 +95,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
     elseif ($data['NCERROR'] == '50001127') {
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
@@ -104,11 +104,11 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       commerce_payment_transaction_save($transaction);
       $query = $api->query($transaction, $pay_id = $data['PAYID'], $sub_id = $data['PAYIDSUB'] - 1);
       drupal_set_message(t('This order has been captured previously.'));
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
     else {
       drupal_set_message(t('An error occur(@error_plus)', array('@error_plus' => $data['NCERRORPLUS'])));
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
   elseif ($transaction->amount > commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
@@ -136,7 +136,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
       commerce_payment_transaction_save($transaction);
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
 
@@ -237,7 +237,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
   elseif ($transaction->amount != commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
@@ -272,7 +272,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
-      drupal_goto('admin/commerce/orders');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
 
@@ -443,5 +443,5 @@ function commerce_ingenico_update_form_submit($form, &$form_state) {
   elseif ($result == FALSE) {
     drupal_set_message(t('The transaction was not updated'), 'error');
   }
-  drupal_goto(t('admin/commerce/orders/@transaction/payment', array('@transaction' => $transaction->transaction_id)));
+  drupal_goto(t('admin/commerce/orders/@order/payment', array('@order' => $order->order_id)));
 }

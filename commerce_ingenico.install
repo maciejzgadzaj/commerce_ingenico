@@ -14,7 +14,7 @@ function commerce_ingenico_requirements($phase) {
   // Ensure translations don't break at install time.
   $t = get_t();
 
-  $path_ingenico = $_SERVER['DOCUMENT_ROOT'] . '/sites/all/libraries/ogone';
+  $path_ingenico = libraries_get_path('ogone');
   //Checks for the library during instalation process.
   if ($phase == 'install' && module_exists('libraries')) {
     $library = libraries_get_libraries();
@@ -24,7 +24,6 @@ function commerce_ingenico_requirements($phase) {
     }
     // Check if the expected library path exists.
     if (!empty($library_name) and $library_name == 'ogone' && (file_exists($path_ingenico) === TRUE or (!empty($library_path) and file_exists($library_path) == TRUE))) {
-      $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
         'severity' => REQUIREMENT_OK,
@@ -55,11 +54,10 @@ function commerce_ingenico_requirements($phase) {
   }
   //Check for the library during runtime.
   if ($phase == 'runtime' && module_exists('libraries')) {
-    $library = libraries_detect('Ogone');
+    $library = libraries_detect('ogone');
 
     // Check if the expected library path exists.
     if (!empty($library['installed'])) {
-      $path = libraries_get_path('ogone');
       $requirements['ogone'] = array(
         'title' => $t('Ogone library'),
         'value' => $t('Ogone PHP library @version is available.', array('@version' => $library['version'])),

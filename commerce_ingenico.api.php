@@ -29,19 +29,21 @@ class IngenicoApi {
   /**
    * Prepare the phrase that will be used for the sha algorithm.
    */
-  public function prepare_phrase_to_hash($sha_type) {
+  public function prepare_phrase_to_hash($sha_type, $sha_algorithm = NULL) {
     //Get the sha istance from the library.
     $library = libraries_info('ogone');
     $load_library = libraries_load('ogone');
     libraries_load_files($load_library);
-    if ($sha_type = 'sha_in') {
+    if ($sha_type == 'sha_in') {
       $pass_phrase = new Passphrase(trim($this->sha_in));
     }
     elseif ($sha_type == 'sha_out') {
       $pass_phrase = new Passphrase(trim($this->sha_out));
     }
-    $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
-    $sha_algorithm = $payment_methods['settings']['sha_algorithm'];
+    if (empty($sha_algorithm)) {
+      $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+      $sha_algorithm = $payment_methods['settings']['sha_algorithm'];
+    }
     switch ($sha_algorithm) {
       case 'SHA-1':
         $sha = new HashAlgorithm('sha1');
