@@ -92,14 +92,14 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+      $transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
     elseif ($data['NCERROR'] == '50001127') {
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+      $transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       $query = $api->query($transaction, $pay_id = $data['PAYID'], $sub_id = $data['PAYIDSUB'] - 1);
@@ -127,7 +127,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $new_transaction = commerce_payment_transaction_new($transaction->payment_method, $order->order_id);
       $new_transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $new_transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $new_transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+      $new_transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $new_transaction->currency_code = $transaction->currency_code;
       $new_transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
       $new_transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
@@ -231,7 +231,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_REFUND;
+      $transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_REFUND;
       $transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
@@ -263,7 +263,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $new_transaction = commerce_payment_transaction_new($transaction->payment_method, $order->order_id);
       $new_transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $new_transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $new_transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_REFUND;
+      $new_transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_REFUND;
       $new_transaction->instance_id = $transaction->instance_id;
       $new_transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
@@ -324,10 +324,10 @@ function commerce_ingenico_cancel_form_submit($form, &$form_state) {
   }
   else {
     if ($result->status_message == 'OK' and $result->code == 200 and $response_data['NCERROR'] == 0) {
-      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED;
-      $transaction->message .= '<br/>' . 'The transaction have been canceled.';
+      $transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CANCELLED;
+      $transaction->message .= '<br/>' . 'The transaction have been cancelled.';
       commerce_payment_transaction_save($transaction);
-      drupal_set_message(t('The transaction has been canceled.'), 'status');
+      drupal_set_message(t('The transaction has been cancelled.'), 'status');
     }
     drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
   }
