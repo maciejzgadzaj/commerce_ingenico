@@ -6,6 +6,7 @@
 
 /**
  * Implements hook_requirements().
+ *
  * Display installed status on the site report screen.
  */
 function commerce_ingenico_requirements($phase) {
@@ -15,7 +16,7 @@ function commerce_ingenico_requirements($phase) {
   $t = get_t();
 
   $path_ingenico = libraries_get_path('ogone');
-  //Checks for the library during instalation process.
+  // Checks for the library during instalation process.
   if ($phase == 'install' && module_exists('libraries')) {
     $library = libraries_get_libraries();
     foreach ($library as $key => $value) {
@@ -52,7 +53,7 @@ function commerce_ingenico_requirements($phase) {
       return $requirements;
     }
   }
-  //Check for the library during runtime.
+  // Check for the library during runtime.
   if ($phase == 'runtime' && module_exists('libraries')) {
     $library = libraries_detect('ogone');
 

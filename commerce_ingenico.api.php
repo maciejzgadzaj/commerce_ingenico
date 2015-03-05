@@ -30,7 +30,7 @@ class IngenicoApi {
    * Prepare the phrase that will be used for the sha algorithm.
    */
   public function prepare_phrase_to_hash($sha_type, $sha_algorithm = NULL) {
-    //Get the sha istance from the library.
+    // Get the sha istance from the library.
     $library = libraries_info('ogone');
     $load_library = libraries_load('ogone');
     libraries_load_files($load_library);
@@ -47,13 +47,15 @@ class IngenicoApi {
     switch ($sha_algorithm) {
       case 'SHA-1':
         $sha = new HashAlgorithm('sha1');
-      break;
+        break;
+
       case 'SHA-256':
         $sha = new HashAlgorithm('sha256');
-      break;
+        break;
+
       case 'SHA-512':
         $sha = new HashAlgorithm('sha512');
-      break;
+        break;
     }
     return $sha_composer = new AllParametersShaComposer($pass_phrase, $sha);
   }
@@ -64,14 +66,14 @@ class IngenicoApi {
   public function directPayments($customer_profile, $order, $card_info, $type = 'SAL', $amount = '') {
     global $base_root;
     $site_name = variable_get('site_name');
-    //$currency = currency_load(empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code );
-    //$currency_code = $currency->ISO4217Code;
+    // $currency = currency_load(empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code );
+    // $currency_code = $currency->ISO4217Code;
     $currency_code = empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code;
     $charge_amount = empty($amount->amount) ? $order->commerce_order_total['und'][0]['amount'] : $amount->amount;
 
     $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
-    //Get the hash algorithm.
+    // Get the hash algorithm.
     $sha_composer = self::prepare_phrase_to_hash('sha_in');
 
     if ($customer_profile[0]->commerce_customer_address['und'][0]['name_line'] != $card_info['credit_card']['owner']) {
@@ -81,7 +83,7 @@ class IngenicoApi {
       $card_owner_name = $customer_profile[0]->commerce_customer_address['und'][0]['name_line'];
     }
 
-    //All of the billing data needed for the request.
+    // All of the billing data needed for the request.
     $billing_data = array(
       'PSPID' => trim($this->merchant_id),
       'ORDERID' => trim($order->order_id . '-' . time()),
@@ -92,7 +94,7 @@ class IngenicoApi {
       'CARDNO' => trim($card_info['credit_card']['number']),
       'ED' => trim($card_info['credit_card']['exp_month'] . substr($card_info['credit_card']['exp_year'], 2, 4)),
       'COM' => trim(t('Order')),
-      'CN' =>  trim($card_owner_name),
+      'CN' => trim($card_owner_name),
       'EMAIL' => trim($order->mail),
       'CVC' => trim($card_info['credit_card']['code']),
       'OWNERADDRESS' => trim($customer_profile[0]->commerce_customer_address['und'][0]['thoroughfare']),
@@ -106,9 +108,9 @@ class IngenicoApi {
       'ORIG' => 'OGDC140415',
       'BRAND' => $card_info['credit_card']['type'],
       'PM' => 'CreditCard',
-      );
-    //variable_set('billing', $billing_data);
-   //3d secure check.
+    );
+    // variable_set('billing', $billing_data);
+    // 3d secure check.
     if ($payment_methods['settings']['3d_secure'] == 0) {
       $billing_data['FLAG3D'] = 'Y';
       $billing_data['HTTP_ACCEPT'] = $_SERVER['HTTP_ACCEPT'];
@@ -122,11 +124,11 @@ class IngenicoApi {
       $billing_data['LANGUAGE'] = $payment_methods['settings']['language_list']['default_language'];
     }
 
-    //Hash the sha phrace with the billing data.
+    // Hash the sha phrace with the billing data.
     $shasign = $sha_composer->compose($billing_data);
     $billing_data['SHASIGN'] = $shasign;
 
-    //Url encode
+    // Url encode.
     foreach ($billing_data as $key => $value) {
       $data[$key] = urlencode($value);
     }
@@ -141,7 +143,7 @@ class IngenicoApi {
    * Perform cross payment.
    */
   public function crossPayment($order, $transaction, $type = '', $operation = 'capture', $pay_id = '', $sub_id = '', $amount = '') {
-    //Build the sha algorithm.
+    // Build the sha algorithm.
     $sha_composer = self::prepare_phrase_to_hash('sha_in');
 
     $payment_methods = commerce_payment_method_instance_load($transaction->instance_id);
@@ -162,11 +164,11 @@ class IngenicoApi {
     if (!empty($pay_id)) {
       $billing_data['PAYID'] = $pay_id;
     }
-    //Hash the sha phrace with the billing data.
+    // Hash the sha phrace with the billing data.
     $shasign = $sha_composer->compose($billing_data);
     $billing_data['SHASIGN'] = $shasign;
 
-      //Url encode
+    // Url encode.
     foreach ($billing_data as $key => $value) {
       $data[$key] = urlencode($value);
     }
@@ -212,7 +214,7 @@ class IngenicoApi {
       }
     }
 
-    //build the url parameters.
+    // Build the url parameters.
     foreach ($data as $key => $value) {
       $params[] = $key . '=' . $value;
     }
@@ -253,7 +255,7 @@ class IngenicoApi {
     if (!empty($sub_id)) {
       $data['PAYIDSUB'] = $sub_id;
     }
-    //Url encode.
+    // Url encode.
     foreach ($data as $key => $value) {
       $encoded_data[$key] = urlencode($value);
     }
@@ -275,9 +277,10 @@ class IngenicoApi {
    */
   public function get_response_data($result_data) {
     $xml = simplexml_load_string($result_data);
-    if (!empty($xml))
-    foreach ($xml->attributes() as $key => $value) {
-        $data[$key] = (string)$value;
+    if (!empty($xml)) {
+      foreach ($xml->attributes() as $key => $value) {
+        $data[$key] = (string) $value;
+      }
     }
     return $data;
   }
@@ -290,15 +293,12 @@ class IngenicoApi {
  * Allows modules to alter the payment data before the data is signed and sent
  * to Ingenico.
  *
- * @param &$data
+ * @param array &$data
  *   The data that is to be sent to Ingenico as an associative array.
- * @param $order
+ * @param object $order
  *   The commerce order object being processed.
- * @param $settings
+ * @param array $settings
  *   The configuration settings.
- *
- * @return
- *   No return value.
  */
 function hook_commerce_ingenico_data_alter(&$data, $order, $settings) {
   global $language;

@@ -8,7 +8,7 @@
  * Implements hook_default_rules_configuration().
  */
 function commerce_ingenico_default_rules_configuration() {
-   //Reaction rule.
+  // Reaction rule.
   $rule = rules_reaction_rule();
   $rule->label = t('Compare remote status with local');
   $rule->tags = array('Commerce Order');
@@ -25,7 +25,7 @@ function commerce_ingenico_default_rules_configuration() {
       'view' => 'transactions_in_pending_status|default',
       'view_user:select' => 'admin-user',
       'entity_list:label' => t('All pending transactions'),
-      'entity_list:var' => 'all_pending_transactions'
+      'entity_list:var' => 'all_pending_transactions',
     ));
 
   $loop = rules_loop(array(
@@ -44,7 +44,7 @@ function commerce_ingenico_default_rules_configuration() {
   ));
   $rules['rules_compare_remote_status_with_local'] = $rule;
 
-  //Reaction rule triggered on cron run that captures pending transactions.
+  // Reaction rule triggered on cron run that captures pending transactions.
   $rule = rules_reaction_rule();
   $rule->label = t('Capture transactions on cron run.');
   $rule->tags = array('Commerce Order');

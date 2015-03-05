@@ -2,12 +2,11 @@
 
 /**
  * @file
- *
  * SHA security hash specific functionality
  */
 
 /**
- * Validate the feedback with the SHA signature
+ * Validate the feedback with the SHA signature.
  */
 function commerce_ingenico_feedback_valid_sha($feedback) {
   $incoming_sha = '';
@@ -16,7 +15,7 @@ function commerce_ingenico_feedback_valid_sha($feedback) {
       $incoming_sha[$param] = $feedback[$param];
     }
   }
-  //Get the right sha algorithm.
+  // Get the right sha algorithm.
   $api = commerce_ingenico_api_object();
   $sha_composer = $api->prepare_phrase_to_hash('sha_out');
   $sha_out = $sha_composer->compose($incoming_sha);
@@ -24,7 +23,7 @@ function commerce_ingenico_feedback_valid_sha($feedback) {
 }
 
 /**
- * Get a list of valid SHA out parameters
+ * Get a list of valid SHA out parameters.
  */
 function commerce_ingenico_sha_out_parameters() {
   return array('AAVADDRESS', 'AAVCHECK', 'AAVZIP', 'ACCEPTANCE', 'ALIAS', 'AMOUNT',

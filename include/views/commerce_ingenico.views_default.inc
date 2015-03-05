@@ -11,7 +11,7 @@
 function commerce_ingenico_views_default_views() {
   $views = array();
 
-   //Transactions in pending status
+  // Transactions in pending status.
   $view = new view();
   $view->name = 'transactions_in_pending_status';
   $view->description = '';

@@ -29,10 +29,10 @@ function commerce_ingenico_libraries_info() {
     'download url' => 'https://github.com/marlon-be/marlon-ogone/archive/master.zip',
     'path' => 'lib',
     'version arguments' => array(
-    'file' => 'VERSION',
-    'pattern' => '@([a-z0-9\.-]+)@',
-    'lines' => 1,
-    'cols' => 10,
+      'file' => 'VERSION',
+      'pattern' => '@([a-z0-9\.-]+)@',
+      'lines' => 1,
+      'cols' => 10,
     ),
     'files' => array(
       'php' => array(
@@ -98,7 +98,7 @@ function commerce_ingenico_menu() {
     'page arguments' => array(),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    //'file' => 'commerce_ingenico.module',
+    // 'file' => 'commerce_ingenico.module',
   );
 
   // Add a menu item for capturing.
@@ -127,7 +127,7 @@ function commerce_ingenico_menu() {
     'weight' => 2,
   );
 
-    // Add a menu item for cancel.
+  // Add a menu item for cancel.
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/cancel'] = array(
     'title' => 'Cancel',
     'page callback' => 'drupal_get_form',
@@ -140,7 +140,7 @@ function commerce_ingenico_menu() {
     'weight' => 2,
   );
 
-   // Add a menu item for deletion.
+  // Add a menu item for deletion.
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/delete'] = array(
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
@@ -153,7 +153,7 @@ function commerce_ingenico_menu() {
     'weight' => -100,
   );
 
-   // Add a menu item for update.
+  // Add a menu item for update.
   $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/update'] = array(
     'title' => 'Update',
     'page callback' => 'commerce_ingenico_update_redirect',
@@ -166,15 +166,15 @@ function commerce_ingenico_menu() {
     'weight' => 2,
   );
 
-  //Define a path to start the authorization process.
+  // Define a path to start the authorization process.
   $items['commerce_ingenico/3d_secure'] = array(
     'page callback' => 'commerce_ingenico_3d_secure',
-    //'page arguments' => array('commerce_ingenico_3d_secure', 1,2),
+    // 'page arguments' => array('commerce_ingenico_3d_secure', 1,2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
 
-  //Define a path to receive 3D Secure callback.
+  // Define a path to receive 3D Secure callback.
   $items['commerce_ingenico/3ds/callback'] = array(
     'page callback' => 'commerce_ingenico_3d_secure_callback',
     'page arguments' => array(3),
@@ -183,21 +183,21 @@ function commerce_ingenico_menu() {
   );
 
   $rule = rules_config_load('commerce_payment_ingenico_direct');
-  //if (!empty($rule) and $rule->active == 1) {
-    //Menu item for the batch process.
-    $items['admin/commerce/orders/batch'] = array(
-      'title' => 'Ingenico capture',
-      'description' => 'Capture all pending transactions with batch process',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('commerce_ingenico_batch_form'),
-      'access callback' => TRUE,
-      'type' => MENU_LOCAL_TASK,
-      'weight' => 100,
-    );
- // }
+  // if (!empty($rule) and $rule->active == 1) {
+  // Menu item for the batch process.
+  $items['admin/commerce/orders/batch'] = array(
+    'title' => 'Ingenico capture',
+    'description' => 'Capture all pending transactions with batch process',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_ingenico_batch_form'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 100,
+  );
+  // }
 
-  //Define a callback for the callback after the transaction has been proccess with the offsite method,
-  //when the cards were preselected.
+  // Define a callback for the callback after the transaction has been proccess
+  // with the offsite method, when the cards were preselected.
   $items['commerce_ingenico/redirect'] = array(
     'page callback' => 'commerce_ingenico_cards_redirect_callback',
     'access callback' => TRUE,
@@ -226,7 +226,7 @@ function commerce_ingenico_cards_redirect_callback() {
   $feedback = commerce_ingenico_get_feedback();
   $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
-    //Store the transaction.
+    // Store the transaction.
     if (!empty($order_id)) {
       $transaction = commerce_payment_transaction_new('ingenico_offsite', $order->order_id);
       $transaction->uid = $user->uid;
@@ -245,7 +245,7 @@ function commerce_ingenico_cards_redirect_callback() {
         commerce_payment_transaction_save($transaction);
       }
     }
-    //If successeful operation go to checkout complete.
+    // If successeful operation go to checkout complete.
     return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
   }
   else {
@@ -266,7 +266,7 @@ function commerce_ingenico_cards_redirect_callback() {
     if (!empty($user->uid)) {
       commerce_payment_transaction_save($transaction);
     }
-    if ($payment_method['settings']['logs'] == 0 ) {
+    if ($payment_method['settings']['logs'] == 0) {
       watchdog('commerce_ingenico', "The order# @order was cancelled.", array('@order' => $order->order_id), WATCHDOG_ERROR);
     }
     return drupal_goto($base_root);
@@ -277,7 +277,7 @@ function commerce_ingenico_cards_redirect_callback() {
  * Implements hook_menu_alter().
  */
 function commerce_ingenico_menu_alter(&$items) {
-  //Create the path to the file to modify.
+  // Create the path to the file to modify.
   $path = drupal_get_path('module', 'commerce_ingenico');
   $file_path = $path . '/include/commerce_ingenico.admin.inc';
   require_once $file_path;
@@ -286,7 +286,7 @@ function commerce_ingenico_menu_alter(&$items) {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('commerce_ingenico_transaction_delete_form', 3, 5),
     'access callback' => 'commerce_ingenico_delete_access',
-    //'access callback' => TRUE,
+    // 'access callback' => TRUE,
     'access arguments' => array(3, 5),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_INLINE,
@@ -294,7 +294,7 @@ function commerce_ingenico_menu_alter(&$items) {
     'weight' => 10,
   );
 
-//  return $items;
+  // return $items;
 }
 
 /**
@@ -316,13 +316,13 @@ function commerce_ingenico_redirect_alter_form($form, &$form_state, $order) {
  * Mimic batch trigger so it can be triggered when cron runs.
  */
 function commerce_ingenico_batch_rule($date) {
-    $_SESSION['http_request_count'] = 0;
-    $form_state = array();
-    $form_state['values']['hidden_value'] = 1;
-    $form_state['values']['op'] = 'Capture';
-    $form_state['values']['submit'] = 'Capture';
-    $form_state['values']['date'] = $date;
-    drupal_form_submit('commerce_ingenico_batch_form', $form_state);
+  $_SESSION['http_request_count'] = 0;
+  $form_state = array();
+  $form_state['values']['hidden_value'] = 1;
+  $form_state['values']['op'] = 'Capture';
+  $form_state['values']['submit'] = 'Capture';
+  $form_state['values']['date'] = $date;
+  drupal_form_submit('commerce_ingenico_batch_form', $form_state);
 }
 
 /**
@@ -337,8 +337,7 @@ function commerce_ingenico_batch_form($form, &$form_state) {
 
   $form['date'] = array(
     '#type' => 'textfield',
-    '#description' => 'Enter date (like: 16 June 2013), time stamp or days in the past (by giving negative values) like -1 day, -2 days, -3 days … (this will capture all pending transactions from the previous day, 2 days before today or 3 days before today)
-                       or just use “now” to capture all pending transactions from this moment. May use the following format as well: YYYY-MM-DD HH:MM:SS',
+    '#description' => 'Enter date (like: 16 June 2013), time stamp or days in the past (by giving negative values) like -1 day, -2 days, -3 days … (this will capture all pending transactions from the previous day, 2 days before today or 3 days before today) or just use “now” to capture all pending transactions from this moment. May use the following format as well: YYYY-MM-DD HH:MM:SS',
     '#title' => 'Chose a date from which to start capturing transactions.',
     '#default_value' => 'now',
     '#required' => TRUE,
@@ -352,7 +351,7 @@ function commerce_ingenico_batch_form($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#description' => 'Capture all pending transactions',
-    '#value' => 'Capture'
+    '#value' => 'Capture',
   );
 
   return $form;
@@ -428,7 +427,7 @@ function commerce_ingenico_batch_operation($transaction_id, $operation_details, 
 function commerce_ingenico_batchs_finished($success, $results, $operations) {
   if ($success) {
     //drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
-    //Update database.
+    // Update database.
     foreach ($results as $key => $value) {
       $result = $value;
       $api = commerce_ingenico_api_object();
@@ -474,12 +473,12 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
 }
 
 /**
- * Loads transactions by date, transaction_id or order_id
+ * Loads transactions by date, transaction_id or order_id.
  */
 function commerce_ingenico_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
-  ->propertyCondition('status', 'pending');
+    ->propertyCondition('status', 'pending');
   if (!empty($transaction_id)) {
     $query->propertyCondition('transaction_id', $transaction_id);
   }
@@ -492,7 +491,7 @@ function commerce_ingenico_load_all_pending_transactions($date = '', $transactio
   $query->propertyOrderBy('transaction_id', 'DESC');
   $return = array();
   $result = $query->execute();
-    if (!empty($result['commerce_payment_transaction'])) {
+  if (!empty($result['commerce_payment_transaction'])) {
     foreach ($result['commerce_payment_transaction'] as $transaction_id) {
       $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
     }
@@ -532,7 +531,7 @@ function commerce_ingenico_3d_secure_callback() {
   $feedback = commerce_ingenico_get_feedback();
 
   $payment_method = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
-  //Store the transaction.
+  // Store the transaction.
   if (!empty($order_id)) {
     $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
     $transaction->uid = $user->uid;
@@ -550,7 +549,7 @@ function commerce_ingenico_3d_secure_callback() {
     commerce_payment_transaction_save($transaction);
   }
 
-  //Check if the 3d secure has faild.
+  // Check if the 3d secure has faild.
   /*if ((!empty($_GET['3D']) and $_GET['3D'] == 'failed') or (!empty($_POST['3D']) and $_POST['3D'] == 'failed')) {
     if ( $payment_method['settings']['3d_secure'] == 2 and $feedback['NCSTATUS'] == 0 and $feedback['NCERROR'] == 0) {
       drupal_set_message(t('Your transaction was accepted!'), 'status');
@@ -570,7 +569,7 @@ function commerce_ingenico_3d_secure_callback() {
   }*/
 
 
-  //If successeful operation go to checkout complete.
+  // If successeful operation go to checkout complete.
   return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
 }
 
@@ -661,7 +660,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
     'language_list' => array(),
   );
 
-  // BASIC settings
+  // BASIC settings.
   $form['account'] = array(
     '#type' => 'radios',
     '#title' => t('Ingenico account'),
@@ -699,16 +698,16 @@ function commerce_ingenico_settings_form($settings = NULL) {
     '#required' => TRUE,
   );
 
-  // SECURITY settings
+  // SECURITY settings.
   $form['sha_algorithm'] = array(
     '#type' => 'select',
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'selectsha')),
     '#title' => t('Select SHA algorithm type.'),
     '#description' => t('You can choose from SHA-1, SHA-256 and SHA-512 algorithm types to hash your data.'),
     '#options' => array(
-        'SHA-1' => 'SHA-1',
-        'SHA-256' => 'SHA-256',
-        'SHA-512' => 'SHA-512',
+      'SHA-1' => 'SHA-1',
+      'SHA-256' => 'SHA-256',
+      'SHA-512' => 'SHA-512',
     ),
     '#default_value' => !empty($settings['sha_algorithm']) ? $settings['sha_algorithm'] : '',
     '#required' => TRUE,
@@ -809,14 +808,14 @@ function commerce_ingenico_settings_form($settings = NULL) {
     '#title' => t('Logs an issue'),
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'logs')),
     '#options' => array(
-       '0' => 'Always log an issue',
-       '1' => 'Never log issues',
+      '0' => 'Always log an issue',
+      '1' => 'Never log issues',
     ),
     '#default_value' => $default_language_code,
     '#description' => t(''),
   );
 
-  //Hidden form element for initial validation.
+  // Hidden form element for initial validation.
   $form['validate'] = array(
     '#type' => 'hidden',
     '#title' => t('validate'),
@@ -830,12 +829,14 @@ function commerce_ingenico_settings_form($settings = NULL) {
 }
 
 /**
- * Validate the merchant credentials(compare them with the ones entered on ingenico site).
+ * Validate the merchant credentials.
+ *
+ * (Compare them with the ones entered on ingenico site.)
  */
 function validate_element($element, $form, &$form_state) {
   $elements = explode(',', $element['#value']);
 
-  //Test the entered credentials.
+  // Test the entered credentials.
   $transaction = commerce_payment_transaction_new('ingenico', 0);
   $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
 
@@ -847,7 +848,7 @@ function validate_element($element, $form, &$form_state) {
     'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
   );
 
-  include_once('commerce_ingenico.api.php');
+  include_once 'commerce_ingenico.api.php';
   $api = new IngenicoApi($settings);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
@@ -858,13 +859,14 @@ function validate_element($element, $form, &$form_state) {
     watchdog('commerce_ingenico', "Your API credentials are wrong! Visit Ingenico site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ingenico site (USERID is the id of the ‘special’ API user.", array(), WATCHDOG_ERROR);
   }
 
-  //Sync the main credential settings for both of the methods offsite and direct.
-  //Change the settings for the direct payment if the offsite was set.
+  // Sync the main credential settings for both of the methods
+  // offsite and direct.
+  // Change the settings for the direct payment if the offsite was set.
   if (strstr(current_path(), 'commerce_payment_ingenico_offsite') != FALSE) {
-  //Load the configuration for the direct payment.
-  $rule = rules_config_load('commerce_payment_ingenico_direct');
+    // Load the configuration for the direct payment.
+    $rule = rules_config_load('commerce_payment_ingenico_direct');
 
-    //Loop through all elements of the rule.
+    // Loop through all elements of the rule.
     foreach ($rule->actions() as $action) {
       if ($action->getElementName() == 'commerce_payment_enable_' . 'ingenico_direct') {
         if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
@@ -872,68 +874,70 @@ function validate_element($element, $form, &$form_state) {
         }
       }
       if (empty($action->settings['payment_method']['settings'])) {
-        $action->settings['payment_method'] = array('settings' => array(
-          //Url account.
-          'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
-          //PSPID
-          'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
-          //userid
-          'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
-          //password
-          'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
-          //Sha algorithm
-          'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
-          //Sha-in
-          'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
-          //Sha-out
-          'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
-          //3D secure
-          //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-          //Thransaction type process
-          'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
-          //language
-          'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
-          //logs
-          'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
-        ));
-        //Save the settings for the direct payment method.
+        $action->settings['payment_method'] = array(
+          'settings' => array(
+            // Url account.
+            'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
+            // PSPID.
+            'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
+            // Userid.
+            'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
+            // Password.
+            'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
+            // Sha algorithm.
+            'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
+            // Sha-in.
+            'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
+            // Sha-out.
+            'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
+            // 3D secure.
+            //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+            // Transaction type process.
+            'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
+            // Language.
+            'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
+            // Logs.
+            'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+          ),
+        );
+        // Save the settings for the direct payment method.
         $action->save();
       }
       else {
         //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
-        //Url account.
+        // Url account.
         $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
-        //PSPID
+        // PSPID.
         $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
-        //userid
+        // Userid.
         $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
-        //password
+        // Password.
         $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
-        //Sha algorithm
+        // Sha algorithm.
         $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
-        //Sha-in
+        // Sha-in.
         $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
-        //Sha-out
+        // Sha-out.
         $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-        //3D secure
+        // 3D secure.
         //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-        //Thransaction type process
+        // Transaction type process.
         $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
-        //language
+        // Language.
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
-        //logs
+        // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
-        //Save the settings for the direct payment method.
+        // Save the settings for the direct payment method.
         $action->save();
       }
     }
   }
-  //If we've selected the direct payment method.
+  // If we've selected the direct payment method.
   elseif (strstr(current_path(), 'commerce_payment_ingenico_direct') != FALSE) {
-    //Load the configuration for the direct payment.
+    // Load the configuration for the direct payment.
     $rule = rules_config_load('commerce_payment_ingenico_offsite');
 
-    //Loop through all elements of the rule.
+    // Loop through all elements of the rule.
     foreach ($rule->actions() as $action) {
       if ($action->getElementName() == 'commerce_payment_enable_' . 'ingenico_offsite') {
         if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
@@ -941,69 +945,70 @@ function validate_element($element, $form, &$form_state) {
         }
       }
       if (empty($action->settings['payment_method']['settings'])) {
-        $action->settings['payment_method'] = array('settings' => array(
-          //Url account.
-          'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
-          //PSPID
-          'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
-          //userid
-          'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
-          //password
-          'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
-          //Sha algorithm
-          'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
-          //Sha-in
-          'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
-          //Sha-out
-          'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
-          //3D secure
-          //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-          //Thransaction type process
-          'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
-          //language
-          'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
-          //logs
-          'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
-        ));
-        //Save the settings for the direct payment method.
+        $action->settings['payment_method'] = array(
+          'settings' => array(
+            // Url account.
+            'account' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'],
+            // PSPID.
+            'pspid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'],
+            // Userid.
+            'userid' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'],
+            // Password.
+            'password' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'],
+            // Sha algorithm.
+            'sha_algorithm' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'],
+            // Sha-in.
+            'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
+            // Sha-out.
+            'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
+            // 3D secure.
+            //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
+            // Transaction type process.
+            'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
+            // Language.
+            'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
+            // Logs.
+            'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+          ),
+        );
+        // Save the settings for the direct payment method.
         $action->save();
       }
       else {
         //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
-        //Url account.
+        // Url account.
         $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
-        //PSPID
+        // PSPID.
         $action->settings['payment_method']['settings']['pspid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['pspid']['#value'];
-        //userid
+        // Userid.
         $action->settings['payment_method']['settings']['userid'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['userid']['#value'];
-        //password
+        // Password.
         $action->settings['payment_method']['settings']['password'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['password']['#value'];
-        //Sha algorithm
+        // Sha algorithm.
         $action->settings['payment_method']['settings']['sha_algorithm'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_algorithm']['#value'];
-        //Sha-in
+        // Sha-in.
         $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
-        //Sha-out
+        // Sha-out.
         $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-        //3D secure
+        // 3D secure.
         //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
-        //Thransaction type process
+        // Transaction type process.
         $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
-        //language
+        // Language.
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
-        //logs
+        // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
-        //Save the settings for the direct payment method.
+        // Save the settings for the direct payment method.
         $action->save();
       }
     }
   }
 
-
   return TRUE;
 }
 
 /**
- * Payment method callback: redirect form
+ * Payment method callback: redirect form.
  *
  * returns form elements that should be submitted to the redirected
  * payment service
@@ -1015,15 +1020,13 @@ function commerce_ingenico_redirect_form($form, &$form_state, $order, $payment_m
     return array();
   }
 
-  // Set feedback URLs
+  // Set feedback URLs.
   $settings = array(
-    // Return to the previous page when payment is canceled
+    // Return to the previous page when payment is canceled.
     'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
-
-    // Return to the payment redirect page for processing successful payments
+    // Return to the payment redirect page for processing successful payments.
     'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
-
-    // Specify the current payment method instance ID in the notify_url
+    // Specify the current payment method instance ID in the notify_url.
     'payment_method' => $payment_method['instance_id'],
   );
 
@@ -1032,6 +1035,7 @@ function commerce_ingenico_redirect_form($form, &$form_state, $order, $payment_m
 
 /**
  * Helper function for the redirect_form callback.
+ *
  * Builds an Ingenico payment form from an order object.
  */
 function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $settings) {
@@ -1039,11 +1043,11 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
   $wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-  // Get financial info
+  // Get financial info.
   $currency_code = $wrapper->commerce_order_total->currency_code->value();
   $amount = $wrapper->commerce_order_total->amount->value();
   $customer_name = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
-  //Get the device
+  // Get the device.
   if (strstr($_SERVER['HTTP_USER_AGENT'], 'Android') != FALSE) {
     $device = 'mobile';
   }
@@ -1060,9 +1064,9 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $device = 'mobile';
   }
   // Build the data array that will be translated into hidden form values.
-  // NOTE: keys should be uppercase for the SHA security string
+  // NOTE: keys should be uppercase for the SHA security string.
   $data = array(
-    // General parameters
+    // General parameters.
     'PSPID' => $settings['pspid'],
     'ORDERID' => $order->order_id . '-' . time(),
     'AMOUNT' => $amount,
@@ -1071,9 +1075,12 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     'CN' => $customer_name,
     'ORIG' => 'OGDC140415',
     'EMAIL' => $order->mail,
-    // Layout
-    'TITLE' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
-    // Feedback URLs
+    // Layout.
+    'TITLE' => t('Order @order_number at @store', array(
+      '@order_number' => $order->order_number,
+      '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))),
+    )),
+    // Feedback URLs.
     'ACCEPTURL' => $settings['return'],
     'DECLINEURL' => $settings['return'],
     'EXCEPTIONURL' => $settings['return'],
@@ -1095,7 +1102,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $data['ECOM_BILLTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
   //$data['ECOM_BILLTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
 
-  if  (module_exists('commerce_shipping')) {
+  if (module_exists('commerce_shipping')) {
     $customer_profile = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
     $data['ECOM_SHIPTO_COMPANY'] = trim($customer_profile->commerce_customer_address['und'][0]['organisation_name']);
     $data['ECOM_SHIPTO_ONLINE_EMAIL'] = trim($order->mail);
@@ -1107,7 +1114,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
-   // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
   }
   else {
     $data['ECOM_SHIPTO_COMPANY'] = trim($customer_profile->commerce_customer_address['und'][0]['organisation_name']);
@@ -1120,7 +1127,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
-   // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
+    // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
   }
 
   if (!empty($form_state['value']['PM']) and !empty($form_state['value']['type']) and $form_state['value']['type'] != 'other') {
@@ -1155,34 +1162,34 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   // Allow modules to add or alter the data sent to Ingenico before signing.
   drupal_alter('commerce_ingenico_data', $data, $order, $settings);
 
-  // NOTE: data should be ordered alphabetically for the SHA string
+  // NOTE: data should be ordered alphabetically for the SHA string.
   ksort($data);
 
   // Build the Ingenico redirection URL.
   $url = variable_get('commerce_ingenico_provider_url', 'https://secure.ogone.com/ncol/');
-  $url .=  $settings['account'] . '/orderstandard_utf8.asp';
+  $url .= $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
   $api = commerce_ingenico_api_object($settings);
-  //Get the hash algorithm.
+  // Get the hash algorithm.
   $sha_composer = $api->prepare_phrase_to_hash('sha_in', $settings['sha_algorithm']);
-  //Hash the sha phrace with the billing data.
+  // Hash the sha phrace with the billing data.
   $shasign = $sha_composer->compose($data);
 
-  // Generate SHA security string & add hidden parameters to form
+  // Generate SHA security string & add hidden parameters to form.
   $sha_sig = '';
-  //$shasuffix = $settings['sha_in'];
+  // $shasuffix = $settings['sha_in'];
   foreach ($data as $name => $value) {
     if (!empty($value)) {
       $value = trim($value);
-      // Build the SHA string from all filled in parameters
-      //$sha_sig .= $name . '=' . $value . $shasuffix;
-      // Add the value as a hidden form element
+      // Build the SHA string from all filled in parameters.
+      // $sha_sig .= $name . '=' . $value . $shasuffix;
+      // Add the value as a hidden form element.
       $form[$name] = array('#type' => 'hidden', '#value' => $value);
     }
   }
 
-  // Add the calculated SHA string
-  //$form['SHASign'] = array('#type' => 'hidden', '#value' => sha($sha_sig));
+  // Add the calculated SHA string.
+  // $form['SHASign'] = array('#type' => 'hidden', '#value' => sha($sha_sig));
   $form['SHASign'] = array('#type' => 'hidden', '#value' => $shasign);
 
   $form['submit'] = array(
@@ -1198,11 +1205,12 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
       $key == 'ECOM_BILLTO_POSTAL_POSTALCODE' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE1' || $key == 'ECOM_BILLTO_POSTAL_STREET_LINE2' || $key == 'SHASign'
       || $key == 'ECOM_SHIPTO_COMPANY' || $key == 'ECOM_SHIPTO_ONLINE_EMAIL' || $key == 'ECOM_SHIPTO_POSTAL_CITY' || $key == 'ECOM_SHIPTO_POSTAL_COUNTRYCODE'
       || $key == 'ECOM_SHIPTO_POSTAL_NAME_FIRST' || $key == 'ECOM_SHIPTO_POSTAL_NAME_LAST' || $key == 'ECOM_SHIPTO_POSTAL_POSTALCODE' || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE1'
-      || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE2' || $key == 'submit') {
+      || $key == 'ECOM_SHIPTO_POSTAL_STREET_LINE2' || $key == 'submit'
+    ) {
       $new_form[$key] = $value;
     }
   }
-  //$new_form['#redirect'] = $form['#action'];
+  // $new_form['#redirect'] = $form['#action'];
   ksort($new_form);
   $form = $new_form;
 
@@ -1220,9 +1228,10 @@ function commerce_ingenico_redirect_form_validate($order, $payment_method) {
 /**
  * Gets the Ingenico feedback from GET / POST parameters.
  *
- * @return
- *   An associative array containing the Ingenico feedback taken from the $_GET and
- *   $_POST superglobals, excluding 'q' and with the parameter keys uppercased.
+ * @return array
+ *   An associative array containing the Ingenico feedback taken from the $_GET
+ *   and $_POST superglobals, excluding 'q'
+ *   and with the parameter keys uppercased.
  *   Returns FALSE if the SHASIGN parameter is missing (indicating missing or
  *   invalid Ingenico feedback).
  */
@@ -1239,12 +1248,12 @@ function commerce_ingenico_get_feedback() {
 }
 
 /**
- * Check if SHA in callback feedback is valid
+ * Check if SHA in callback feedback is valid.
  */
 function commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback) {
   module_load_include('inc', 'commerce_ingenico', 'commerce_ingenico.sha');
-  // Check if the received SHA string is valid
- // $sha_out = $payment_method['settings']['sha_out'];
+  // Check if the received SHA string is valid.
+  // $sha_out = $payment_method['settings']['sha_out'];
   if (empty($payment_method)) {
     $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   }
@@ -1258,14 +1267,15 @@ function commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback
 }
 
 /**
- * Menu callback handler for Ingenico Direct HTTP server-to-server request
+ * Menu callback handler for Ingenico Direct HTTP server-to-server request.
  */
 function commerce_ingenico_callback() {
-  // Load order and payment_method objects
+  // Load order and payment_method objects.
   if ($feedback = commerce_ingenico_get_feedback()) {
     $order = commerce_order_load_by_number($feedback['ORDERID']);
     if ($order) {
-      // Load the payment method, since it won't be available if no $order object was passed in as argument
+      // Load the payment method, since it won't be available
+      // if no $order object was passed in as argument.
       $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
       if (!$payment_method || $payment_method['method_id'] != 'ingenico') {
         return FALSE;
@@ -1279,13 +1289,15 @@ function commerce_ingenico_callback() {
 }
 
 /**
- * Process callback information from Ingenico
- * This can either be through a redirect after payment, or a Direct HTTP server-to-server request
+ * Process callback information from Ingenico.
+ *
+ * This can either be through a redirect after payment,
+ * or a Direct HTTP server-to-server request
  */
 function commerce_ingenico_process_callback($order, $payment_method) {
   if ($feedback = commerce_ingenico_get_feedback()) {
     if (commerce_ingenico_valid_sha_callback($order, $payment_method, $feedback)) {
-      // Process the transaction based on the Ingenico parameters received
+      // Process the transaction based on the Ingenico parameters received.
       commerce_ingenico_process_transaction($order, $payment_method, $feedback);
       return TRUE;
     }
@@ -1297,7 +1309,7 @@ function commerce_ingenico_process_callback($order, $payment_method) {
  */
 function commerce_ingenico_get_payment_transaction($feedback) {
   $feedback_remote_id = $feedback['PAYID'];
-  $query = new EntityFieldQuery;
+  $query = new EntityFieldQuery();
 
   $result = $query
     ->entityCondition('entity_type', 'commerce_payment_transaction')
@@ -1312,15 +1324,15 @@ function commerce_ingenico_get_payment_transaction($feedback) {
 }
 
 /**
- * Process the payment transaction with the info received from Ingenico
+ * Process the payment transaction with the info received from Ingenico.
  *
- * @param $order
+ * @param object $order
  *   The loaded order that is being processed
- * @param $payment_method
+ * @param array $payment_method
  *   The payment method settings
- * @param $feedback
+ * @param array $feedback
  *   The parameters received from Ingenico regarding the payment
- * @param $redirect
+ * @param bool $redirect
  *   Specifies whether to call redirect functions or not
  */
 function commerce_ingenico_process_transaction($order, $payment_method, $feedback, $redirect = TRUE) {
@@ -1334,16 +1346,16 @@ function commerce_ingenico_process_transaction($order, $payment_method, $feedbac
 
   $payment_status = commerce_ingenico_feedback_status($feedback['STATUS']);
 
-  // identifying data
+  // Identifying data.
   $transaction->instance_id = $payment_method['instance_id'];
   $transaction->remote_id = $feedback['PAYID'];
-  // payment amount details
+  // Payment amount details.
   $transaction->amount = $order->commerce_order_total[LANGUAGE_NONE][0]['amount'];
   $transaction->currency_code = $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'];
-  // payment status
+  // Payment status.
   $transaction->payment_method = 'ingenico_offsite';
   $transaction->remote_status = $feedback['STATUS'];
-  $transaction->status =  ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+  $transaction->status = ($payment_method['settings']['transaction_type_process'] == 'capture_manual') ? COMMERCE_PAYMENT_STATUS_PENDING : COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
   $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
   $transaction->payload = $feedback;
   commerce_payment_transaction_save($transaction);
@@ -1358,7 +1370,7 @@ function commerce_ingenico_process_transaction($order, $payment_method, $feedbac
 }
 
 /**
- * Get a list of enabled currencies
+ * Get a list of enabled currencies.
  *
  * @TODO: figure out which currencies Ingenico actually supports
  */
@@ -1367,7 +1379,11 @@ function commerce_ingenico_currencies() {
   $options = array();
 
   foreach (commerce_currencies(TRUE) as $currency_code => $currency) {
-    $options[$currency_code] = t('@code - !name', array('@code' => $currency['code'], '@symbol' => $currency['symbol'], '!name' => $currency['name']));
+    $options[$currency_code] = t('@code - !name', array(
+      '@code' => $currency['code'],
+      '@symbol' => $currency['symbol'],
+      '!name' => $currency['name'],
+    ));
 
     if (!empty($currency['symbol'])) {
       $options[$currency_code] .= ' - ' . check_plain($currency['symbol']);
@@ -1378,172 +1394,248 @@ function commerce_ingenico_currencies() {
 }
 
 /**
- * Get a payment status and message based on Ingenico status ID
- * @param $status
+ * Get a payment status and message based on Ingenico status ID.
+ *
+ * @param int $status
  *   received ingenico status ID
+ *
  * @return array
  *   key 'code' contains the commerce status
  *   key 'message' contains a textual representation of the ingenico status ID
  */
 function commerce_ingenico_feedback_status($status) {
   switch ($status) {
-    //Success.
-    case 4:  //Order stored
+    // Success.
+    case 4:
+      // Order stored.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Order stored');
       break;
-    case 5:  //Authorized
+
+    case 5:
+      // Authorized.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Authorized');
       break;
-    case 8:  //Refund
+
+    case 8:
+      // Refund.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Refund');
       break;
-    case 85:  //Refund processed by merchant
+
+    case 85:
+      // Refund processed by merchant.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Refund processed by merchant');
       break;
-    case 9:  //Payment requested
+
+    case 9:
+      // Payment requested.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Payment requested');
       break;
-    case 95:  //Payment processed by merchant
+
+    case 95:
+      // Payment processed by merchant.
       $st = COMMERCE_PAYMENT_STATUS_SUCCESS;
       $msg = t('Payment processed by merchant');
       break;
 
-    //Pending.
-    case 40: //Stored waiting external result
+    // Pending.
+    case 40:
+      // Stored waiting external result.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Stored waiting external result');
       break;
-    case 41: //Waiting client payment
+
+    case 41:
+      // Waiting client payment.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Waiting client payment');
       break;
-    case 50: //Authorized waiting external result
+
+    case 50:
+      // Authorized waiting external result.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authorized waiting external result');
       break;
-    case 51: //Authorization waiting
+
+    case 51:
+      // Authorization waiting.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authorization waiting');
       break;
-    case 55: //Stand-by
+
+    case 55:
+      // Stand-by.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Stand-by');
       break;
-    case 56: //OK with scheduled payments
+
+    case 56:
+      // OK with scheduled payments.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('OK with scheduled payments');
       break;
-    case 59: //Authoriz. to get manually
+
+    case 59:
+      // Authoriz. to get manually.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Authoriz. to get manually');
       break;
-    case 81: //Refund pending
+
+    case 81:
+      // Refund pending.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Refund pending');
       break;
-    case 82: //Refund uncertain
+
+    case 82:
+      // Refund uncertain.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Refund uncertain');
       break;
-    case 91: //Payment processing
+
+    case 91:
+      // Payment processing.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Payment processing');
       break;
-    case 92: //Payment uncertain
+
+    case 92:
+      // Payment uncertain.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Payment uncertain');
       break;
-    case 99: //Being processed
+
+    case 99:
+      // Being processed.
       $st = COMMERCE_PAYMENT_STATUS_PENDING;
       $msg = t('Being processed');
       break;
 
-    //Failure.
-    case 0:  //Incomplete or invalid
+    // Failure.
+    case 0:
+      // Incomplete or invalid.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Incomplete or invalid');
       break;
-    case 1:  //Cancelled by client
+
+    case 1:
+      // Cancelled by client.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Cancelled by client');
       break;
-    case 2:  //Authorization refused
+
+    case 2:
+      // Authorization refused.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorization refused');
       break;
-    case 52: //Authorization not known
+
+    case 52:
+      // Authorization not known.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorization not known');
       break;
-    case 57: //Error in scheduled payments
+
+    case 57:
+      // Error in scheduled payments.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Error in scheduled payments');
       break;
-    case 6:  //Authorized and cancelled
+
+    case 6:
+      // Authorized and cancelled.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorized and cancelled');
       break;
-    case 61: //Author. deletion waiting
+
+    case 61:
+      // Author. deletion waiting.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion waiting');
       break;
-    case 62: //Author. deletion uncertain
+
+    case 62:
+      // Author. deletion uncertain.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion uncertain');
       break;
-    case 63: //Author. deletion refused
+
+    case 63:
+      // Author. deletion refused.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Author. deletion refused');
       break;
-    case 64: //Authorized and cancelled
+
+    case 64:
+      // Authorized and cancelled.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Authorized and cancelled');
       break;
-    case 7:  //Payment deleted
+
+    case 7:
+      // Payment deleted.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deleted');
       break;
-    case 71:  //Payment deletion pending
+
+    case 71:
+      // Payment deletion pending.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion pending');
       break;
-    case 72:  //Payment deletion uncertain
+
+    case 72:
+      // Payment deletion uncertain.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion uncertain');
       break;
-    case 73:  //Payment deletion refused
+
+    case 73:
+      // Payment deletion refused.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deletion refused');
       break;
-    case 74:  //Payment deleted
+
+    case 74:
+      // Payment deleted.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment deleted');
       break;
-    case 75:  //Deletion processed by merchant
+
+    case 75:
+      // Deletion processed by merchant.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Deletion processed by merchant');
       break;
-    case 83:  //Refund refused
+
+    case 83:
+      // Refund refused.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund refused');
       break;
-    case 84:  //Payment declined by the acquirer
+
+    case 84:
+      // Payment declined by the acquirer.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment declined by the acquirer');
       break;
-    case 93:  //Payment refused
+
+    case 93:
+      // Payment refused.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Payment refused');
       break;
-    case 94:  //Refund declined by the acquirer
+
+    case 94:
+      // Refund declined by the acquirer.
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Refund declined by the acquirer');
       break;
+
     default:
       $st = COMMERCE_PAYMENT_STATUS_FAILURE;
       $msg = t('Unknown feedback status');
@@ -1558,9 +1650,12 @@ function commerce_ingenico_feedback_status($status) {
 
 /**
  * Looks up the language code of a enabled language.
- * @param $settings
+ *
+ * @param array $settings
  *   Received settings
- * @return language code
+ *
+ * @return string
+ *   Language code.
  */
 function _commerce_ingenico_get_language_code($settings) {
   global $language;
@@ -1583,7 +1678,9 @@ function _commerce_ingenico_get_language_code($settings) {
 
 /**
  * Returns a list of supported ingenico language codes.
- * @return language codes
+ *
+ * @return array
+ *   Language codes,
  */
 function _commerce_ingenico_get_language_code_list() {
   $language_codes = array(
@@ -1619,11 +1716,11 @@ function _commerce_ingenico_get_language_code_list() {
 function commerce_ingenico_transaction_load($transaction_id) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
-  ->propertyCondition('transaction_id', $transaction_id)
-  ->propertyOrderBy('transaction_id', 'DESC');
+    ->propertyCondition('transaction_id', $transaction_id)
+    ->propertyOrderBy('transaction_id', 'DESC');
   $return = array();
   $result = $query->execute();
-    if (!empty($result['commerce_payment_transaction'])) {
+  if (!empty($result['commerce_payment_transaction'])) {
     foreach ($result['commerce_payment_transaction'] as $transaction_id) {
       $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
     }
@@ -1686,11 +1783,11 @@ function commerce_ingenico_capture($transaction, $amount, $order, $payment_metho
     return TRUE;
   }
   elseif ($data['NCERROR'] == '50001127') {
-      $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
-      $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
-      $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
-      commerce_payment_transaction_save($transaction);
-      drupal_set_message(t('This order has been captured previously.'));
+    $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
+    $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
+    $transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+    commerce_payment_transaction_save($transaction);
+    drupal_set_message(t('This order has been captured previously.'));
   }
   else {
     drupal_set_message(t('The operation was not successful.'), 'error');
@@ -1719,7 +1816,8 @@ function commerce_ingenico_query_update($transaction, $manual = '') {
       if ($manual == 1) {
         return TRUE;
       }
-    break;
+      break;
+
     case '9':
       $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
       $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
@@ -1727,7 +1825,8 @@ function commerce_ingenico_query_update($transaction, $manual = '') {
       if ($manual == 1) {
         return TRUE;
       }
-    break;
+      break;
+
     case '61':
       $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CANCELED;
       $transaction->message = commerce_ingenico_status_messages($data['STATUS']);
@@ -1735,7 +1834,7 @@ function commerce_ingenico_query_update($transaction, $manual = '') {
       if ($manual == 1) {
         return TRUE;
       }
-    break;
+      break;
   }
 
   if ($manual == 1) {
@@ -1748,28 +1847,32 @@ function commerce_ingenico_query_update($transaction, $manual = '') {
  */
 function commerce_ingenico_status_messages($status) {
   $codes = array(
-    '0' => t('Incomplete or invalid.'), '1' => t('Cancelled by client.'), '2' => t('Authorisation refused.'), '4'	=> t('Order stored.'), '41' => t('Waiting client payment.'),
-    '5'	=> t('Authorised.'),
+    '0' => t('Incomplete or invalid.'),
+    '1' => t('Cancelled by client.'),
+    '2' => t('Authorisation refused.'),
+    '4' => t('Order stored.'),
+    '41' => t('Waiting client payment.'),
+    '5' => t('Authorised.'),
     '51' => t('Authorisation waiting.'),
     '52' => t('Authorisation not known.'),
     '59' => t('Author. to get manually.'),
-    '6'	=> t('Authorised and canceled.'),
+    '6' => t('Authorised and canceled.'),
     '61' => t('Author. deletion waiting.'),
     '62' => t('Author. deletion uncertain.'),
     '63' => t('Author. deletion refused.'),
-    '7'	=> t('Payment deleted.'),
+    '7' => t('Payment deleted.'),
     '71' => t('Payment deletion pending.'),
     '72' => t('Payment deletion uncertain.'),
     '73' => t('Payment deletion refused.'),
     '74' => t('Payment deleted (not accepted).'),
     '75' => t('Deletion processed by merchant.'),
-    '8'	=> t('Refund.'),
+    '8' => t('Refund.'),
     '81' => t('Refund pending.'),
     '82' => t('Refund uncertain.'),
     '83' => t('Refund refused.'),
     '84' => t('Payment declined by the acquirer (will be debited).'),
     '85' => t('Refund processed by merchant.'),
-    '9'	=> t('Payment requested.'),
+    '9' => t('Payment requested.'),
     '91' => t('Payment processing.'),
     '92' => t('Payment uncertain.'),
     '93' => t('Payment refused.'),
@@ -1795,9 +1898,9 @@ function commerce_ingenico_payment_methods() {
       'PM' => 'PAYPAL',
       'BRAND' => t('PAYPAL'),
     ),
-   'visa' => array(
-     'PM' => 'CreditCard',
-     'BRAND' => t('Visa'),
+    'visa' => array(
+      'PM' => 'CreditCard',
+      'BRAND' => t('Visa'),
     ),
     'mastercard' => array(
       'PM' => 'CreditCard',
