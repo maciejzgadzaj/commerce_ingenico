@@ -29,7 +29,7 @@ class IngenicoApi {
   /**
    * Prepare the phrase that will be used for the sha algorithm.
    */
-  public function prepare_phrase_to_hash($sha_type, $sha_algorithm = NULL) {
+  public function preparePhraseToHash($sha_type, $sha_algorithm = NULL) {
     // Get the sha istance from the library.
     $load_library = libraries_load('ogone');
     libraries_load_files($load_library);
@@ -70,7 +70,7 @@ class IngenicoApi {
     $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
     // Get the hash algorithm.
-    $sha_composer = self::prepare_phrase_to_hash('sha_in');
+    $sha_composer = self::preparePhraseToHash('sha_in');
 
     if ($customer_profile[0]->commerce_customer_address['und'][0]['name_line'] != $card_info['credit_card']['owner']) {
       $card_owner_name = $card_info['credit_card']['owner'];
@@ -139,7 +139,7 @@ class IngenicoApi {
    */
   public function crossPayment($order, $transaction, $type = '', $operation = 'capture', $pay_id = '', $sub_id = '', $amount = '') {
     // Build the sha algorithm.
-    $sha_composer = self::prepare_phrase_to_hash('sha_in');
+    $sha_composer = self::preparePhraseToHash('sha_in');
 
     $payment_methods = commerce_payment_method_instance_load($transaction->instance_id);
     $payment_method_account = explode('|', $payment_methods['settings']['account']);
@@ -175,7 +175,7 @@ class IngenicoApi {
    * Create the actual http request.
    */
   public function request($payment_account_type, $data, $operation) {
-    $build_result = $this->build_url($payment_account_type, $data, $operation);
+    $build_result = $this->buildUrl($payment_account_type, $data, $operation);
     $result = drupal_http_request($build_result['url'], $build_result['parameters']);
 
     return $result;
@@ -184,7 +184,7 @@ class IngenicoApi {
   /**
    * Build the url needed for the http request.
    */
-  public function build_url($payment_account_type, $data, $operation) {
+  public function buildUrl($payment_account_type, $data, $operation) {
     if ($payment_account_type == 'test') {
       if ($operation == 'direct') {
         $url = 'https://' . self::DOMAIN . '/ncol/test/orderdirect.asp';
@@ -270,7 +270,7 @@ class IngenicoApi {
   /**
    * Extract the response data and convert it from xml to array.
    */
-  public function get_response_data($result_data) {
+  public function getResponseData($result_data) {
     $xml = simplexml_load_string($result_data);
     if (!empty($xml)) {
       foreach ($xml->attributes() as $key => $value) {

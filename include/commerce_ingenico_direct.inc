@@ -190,11 +190,11 @@ function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane
     $result = $api->directPayments($customer_profile, $order, $pane_values);
 
     variable_set('res_test', $result);
-    $data = $api->get_response_data($result->data);
+    $data = $api->getResponseData($result->data);
     if ($data['NCERROR'] != 0) {
       $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
       $query_return = $api->query($transaction, $data['PAYID'], $sub_id = '', $order = '');
-      $query_data = $api->get_response_data($query_return->data);
+      $query_data = $api->getResponseData($query_return->data);
       if ($query_data['NCERROR'] != 0) {
         if (strstr($query_data['NCERRORPLUS'], 'unknown order/1/i') != FALSE) {
           if ($payment_method['settings']['logs'] == 0) {

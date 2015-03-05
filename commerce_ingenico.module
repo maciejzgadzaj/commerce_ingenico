@@ -423,7 +423,7 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
     foreach ($results as $key => $value) {
       $result = $value;
       $api = commerce_ingenico_api_object();
-      $data = $api->get_response_data($result->data);
+      $data = $api->getResponseData($result->data);
       $order_ids = $data['orderID'];
       $order_id = explode('-', $order_ids);
       $transaction = commerce_ingenico_load_all_pending_transactions($transaction_id = '', $order_id[0]);
@@ -814,7 +814,7 @@ function validate_element($element, $form, &$form_state) {
   $api = new IngenicoApi($settings);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
-  $data = $api->get_response_data($result->data);
+  $data = $api->getResponseData($result->data);
 
   if ($data['NCERRORPLUS'] === 'The data you entered is not correct. Please retry.' and $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['logs'] == 0) {
     form_error($element, t('Your API credentials are wrong! Visit Ingenico site and verify your credentials. You should enter the same PSPID, USERID, PSWD, SHA-IN Pass phrase, SHA-IN Pass phrase, as those on the Ingenico site (USERID is the id of the ‘special’ API user).'));
@@ -1118,7 +1118,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $form['#action'] = $url;
   $api = commerce_ingenico_api_object($settings);
   // Get the hash algorithm.
-  $sha_composer = $api->prepare_phrase_to_hash('sha_in', $settings['sha_algorithm']);
+  $sha_composer = $api->preparePhraseToHash('sha_in', $settings['sha_algorithm']);
   // Hash the sha phrace with the billing data.
   $shasign = $sha_composer->compose($data);
 
@@ -1714,7 +1714,7 @@ function commerce_ingenico_capture($transaction, $amount, $order, $payment_metho
   ));
   $api = commerce_ingenico_api_object();
   $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
-  $data = $api->get_response_data($result->data);
+  $data = $api->getResponseData($result->data);
   if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
     $transaction->amount = commerce_currency_decimal_to_amount($amount, $transaction->currency_code);
     $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
@@ -1748,7 +1748,7 @@ function commerce_ingenico_query_update($transaction, $manual = '') {
   $sub_id = !empty($pay_id[1]) ? $pay_id[1] : '';
   $result = $api->query($transaction, $pay_id[0], $sub_id, $sub_id);
 
-  $data = $api->get_response_data($result->data);
+  $data = $api->getResponseData($result->data);
   switch ($data['STATUS']) {
     case '91':
       $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;

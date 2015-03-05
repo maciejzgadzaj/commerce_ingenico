@@ -17,7 +17,7 @@ function commerce_ingenico_feedback_valid_sha($feedback) {
   }
   // Get the right sha algorithm.
   $api = commerce_ingenico_api_object();
-  $sha_composer = $api->prepare_phrase_to_hash('sha_out');
+  $sha_composer = $api->preparePhraseToHash('sha_out');
   $sha_out = $sha_composer->compose($incoming_sha);
   return strtoupper($sha_out) === $feedback['SHASIGN'];
 }

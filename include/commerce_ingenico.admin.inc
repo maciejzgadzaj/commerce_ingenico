@@ -87,7 +87,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture');
 
-    $data = $api->get_response_data($result->data);
+    $data = $api->getResponseData($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
@@ -120,7 +120,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture', $pay_id = '', $sub_id = '', $amount);
 
     // Recover the amount transaction in case of failure of the capture.
-    $data = $api->get_response_data($result->data);
+    $data = $api->getResponseData($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       // Create new trasaction for the captured amount.
@@ -226,7 +226,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
     else {
       $result = $api->crossPayment($order, $transaction, $type = 'RFD', $operation = 'refund');
     }
-    $data = $api->get_response_data($result->data);
+    $data = $api->getResponseData($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
@@ -257,7 +257,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
 
     // Recover the amount transaction in case of failure of the capture.
     $transaction->amount = $transaction->amount + commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
-    $data = $api->get_response_data($result->data);
+    $data = $api->getResponseData($result->data);
 
     if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
       $new_transaction = commerce_payment_transaction_new($transaction->payment_method, $order->order_id);
@@ -317,7 +317,7 @@ function commerce_ingenico_cancel_form_submit($form, &$form_state) {
     $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel');
   }
 
-  $response_data = $api->get_response_data($result->data);
+  $response_data = $api->getResponseData($result->data);
   if ($response_data['NCERROR'] != 0 and empty($response_data['ACCEPTANCE'])) {
     drupal_set_message(t('@error', array('@error' => $response_data['NCERRORPLUS'])), 'error');
     return;
@@ -378,7 +378,7 @@ function commerce_ingenico_transaction_delete_form_submit($form, &$form_state) {
       $result = $api->crossPayment($order, $transaction, $type = 'DES', $operation = 'cancel');
     }
 
-    $response_data = $api->get_response_data($result->data);
+    $response_data = $api->getResponseData($result->data);
     if ($result->status_message == 'OK' and $result->code == 200 and $response_data['NCERROR'] == 0) {
       drupal_set_message(t('The transaction has been deleted.'), 'status');
       if (commerce_payment_transaction_delete($transaction->transaction_id)) {
