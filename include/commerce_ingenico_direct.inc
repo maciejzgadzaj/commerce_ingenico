@@ -170,7 +170,7 @@ function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane
 
     $result = commerce_ingenico_redirect_alter_form($pane_form, $form_state_value, $order);
     foreach ($result as $key => $value) {
-      if ($key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+      if ($key == 'ACCEPTURL' || $key == 'ALIAS' || $key == 'ALIASUSAGE' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
         $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' ||
         $key == 'OWNERADDRESS' || $key == 'OWNERZIP' || $key == 'OWNERTOWN' || $key == 'OWNERCTY' ||
         $key == 'ECOM_BILLTO_POSTAL_CITY' || $key == 'ECOM_BILLTO_POSTAL_COUNTRYCODE' || $key == 'ECOM_BILLTO_POSTAL_NAME_FIRST' || $key == 'ECOM_BILLTO_POSTAL_NAME_LAST' ||
