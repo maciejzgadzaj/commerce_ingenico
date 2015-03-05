@@ -31,7 +31,6 @@ class IngenicoApi {
    */
   public function prepare_phrase_to_hash($sha_type, $sha_algorithm = NULL) {
     // Get the sha istance from the library.
-    $library = libraries_info('ogone');
     $load_library = libraries_load('ogone');
     libraries_load_files($load_library);
     if ($sha_type == 'sha_in') {
@@ -65,9 +64,6 @@ class IngenicoApi {
    */
   public function directPayments($customer_profile, $order, $card_info, $type = 'SAL', $amount = '') {
     global $base_root;
-    $site_name = variable_get('site_name');
-    // $currency = currency_load(empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code );
-    // $currency_code = $currency->ISO4217Code;
     $currency_code = empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code;
     $charge_amount = empty($amount->amount) ? $order->commerce_order_total['und'][0]['amount'] : $amount->amount;
 
@@ -101,7 +97,7 @@ class IngenicoApi {
       'OWNERZIP' => trim($customer_profile[0]->commerce_customer_address['und'][0]['postal_code']),
       'OWNERTOWN' => trim($customer_profile[0]->commerce_customer_address['und'][0]['dependent_locality']),
       'OWNERCTY' => trim($customer_profile[0]->commerce_customer_address['und'][0]['country']),
-      'OPERATION' => (!empty($payment_methods['settings']['transaction_type_process']) and $payment_methods['settings']['transaction_type_process'] == 'sale') ? 'VEN' : '', //($payment_methods['settings']['transaction_type_process'] == 'capture_manual') ? trim('RES') : trim($type),
+      'OPERATION' => (!empty($payment_methods['settings']['transaction_type_process']) and $payment_methods['settings']['transaction_type_process'] == 'sale') ? 'VEN' : '',
       'REMOTE_ADDR' => ip_address(),
       'RTIMEOUT' => trim(30),
       'ECI' => trim('7'),
@@ -109,7 +105,6 @@ class IngenicoApi {
       'BRAND' => $card_info['credit_card']['type'],
       'PM' => 'CreditCard',
     );
-    // variable_set('billing', $billing_data);
     // 3d secure check.
     if ($payment_methods['settings']['3d_secure'] == 0) {
       $billing_data['FLAG3D'] = 'Y';

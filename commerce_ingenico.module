@@ -169,7 +169,6 @@ function commerce_ingenico_menu() {
   // Define a path to start the authorization process.
   $items['commerce_ingenico/3d_secure'] = array(
     'page callback' => 'commerce_ingenico_3d_secure',
-    // 'page arguments' => array('commerce_ingenico_3d_secure', 1,2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -182,8 +181,6 @@ function commerce_ingenico_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $rule = rules_config_load('commerce_payment_ingenico_direct');
-  // if (!empty($rule) and $rule->active == 1) {
   // Menu item for the batch process.
   $items['admin/commerce/orders/batch'] = array(
     'title' => 'Ingenico capture',
@@ -194,7 +191,6 @@ function commerce_ingenico_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 100,
   );
-  // }
 
   // Define a callback for the callback after the transaction has been proccess
   // with the offsite method, when the cards were preselected.
@@ -233,7 +229,7 @@ function commerce_ingenico_cards_redirect_callback() {
       $transaction->order_id = $order->order_id;
       $transaction->payment_method = 'ingenico_offsite';
       $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
-      $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+      $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';
       $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
       $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
       $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
@@ -255,7 +251,7 @@ function commerce_ingenico_cards_redirect_callback() {
     $transaction->order_id = $order->order_id;
     $transaction->payment_method = 'ingenico_offsite';
     $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
-    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';'Payment requested';
+    $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';
     $transaction->message = commerce_ingenico_status_messages($_GET['STATUS']);
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
     $transaction->currency_code = $order->commerce_order_total['und'][0]['currency_code'];
@@ -293,8 +289,6 @@ function commerce_ingenico_menu_alter(&$items) {
     'file' => $file_path,
     'weight' => 10,
   );
-
-  // return $items;
 }
 
 /**
@@ -383,7 +377,6 @@ function commerce_ingenico_batch_process($date = '') {
   else {
     $all_transactions = commerce_ingenico_load_all_pending_transactions();
   }
-  $num_operations = 1000;
   $operations = array();
   foreach ($all_transactions as $key => $value) {
     $transaction_id = $value->transaction_id;
@@ -426,7 +419,6 @@ function commerce_ingenico_batch_operation($transaction_id, $operation_details, 
  */
 function commerce_ingenico_batchs_finished($success, $results, $operations) {
   if ($success) {
-    //drupal_set_message(t('@count transactions processed.', array('@count' => count($results))));
     // Update database.
     foreach ($results as $key => $value) {
       $result = $value;
@@ -436,8 +428,6 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
       $order_id = explode('-', $order_ids);
       $transaction = commerce_ingenico_load_all_pending_transactions($transaction_id = '', $order_id[0]);
       $transaction = reset($transaction);
-      $order = commerce_order_load($order_id[0]);
-      $order = reset($order);
       if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
         $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
         $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_CAPTURED;
@@ -548,26 +538,6 @@ function commerce_ingenico_3d_secure_callback() {
     $transaction->payload = $feedback;
     commerce_payment_transaction_save($transaction);
   }
-
-  // Check if the 3d secure has faild.
-  /*if ((!empty($_GET['3D']) and $_GET['3D'] == 'failed') or (!empty($_POST['3D']) and $_POST['3D'] == 'failed')) {
-    if ( $payment_method['settings']['3d_secure'] == 2 and $feedback['NCSTATUS'] == 0 and $feedback['NCERROR'] == 0) {
-      drupal_set_message(t('Your transaction was accepted!'), 'status');
-      return drupal_goto($base_root);
-    }
-    else {
-      $api = commerce_ingenico_api_object();
-      $remote_order_id = !empty($_GET['REMOTE_ORDER_ID']) ? $_GET['REMOTE_ORDER_ID'] : check_plain($_POST['REMOTE_ORDER_ID']);
-      $order->order_id = $remote_order_id;
-      $result = $api->crossPayment($order, $transaction, $type = 'DEL', $operation = 'cancel', $pay_id = $feedback['PAYID'], $sub_id = '', $amount = '');
-
-      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
-      commerce_payment_transaction_save($transaction);
-      drupal_set_message(t('You can only use 3D secure card for this transaction! Your transaction has been deny!'), 'error');
-      return drupal_goto($base_root);
-    }
-  }*/
-
 
   // If successeful operation go to checkout complete.
   return drupal_goto(t('checkout/@order/complete', array('@order' => $order->order_id)));
@@ -745,11 +715,6 @@ function commerce_ingenico_settings_form($settings = NULL) {
     );
   }
 
-  /*
-  if (strstr(current_path(), 'ingenico_direct')) {
-    $form['3d_secure']['#options']['2'] = t('Accept NOT authenticated transactions.');
-  }*/
-
   $form['transaction_type_process'] = array(
     '#type' => 'radios',
     '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'transaction')),
@@ -812,7 +777,6 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '1' => 'Never log issues',
     ),
     '#default_value' => $default_language_code,
-    '#description' => t(''),
   );
 
   // Hidden form element for initial validation.
@@ -834,8 +798,6 @@ function commerce_ingenico_settings_form($settings = NULL) {
  * (Compare them with the ones entered on ingenico site.)
  */
 function validate_element($element, $form, &$form_state) {
-  $elements = explode(',', $element['#value']);
-
   // Test the entered credentials.
   $transaction = commerce_payment_transaction_new('ingenico', 0);
   $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
@@ -890,8 +852,6 @@ function validate_element($element, $form, &$form_state) {
             'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
             // Sha-out.
             'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
-            // 3D secure.
-            //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
             // Transaction type process.
             'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
             // Language.
@@ -904,7 +864,6 @@ function validate_element($element, $form, &$form_state) {
         $action->save();
       }
       else {
-        //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
         // Url account.
         $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
         // PSPID.
@@ -919,8 +878,6 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
         // Sha-out.
         $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-        // 3D secure.
-        //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
         // Transaction type process.
         $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
         // Language.
@@ -961,8 +918,6 @@ function validate_element($element, $form, &$form_state) {
             'sha_in' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'],
             // Sha-out.
             'sha_out' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'],
-            // 3D secure.
-            //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
             // Transaction type process.
             'transaction_type_process' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'],
             // Language.
@@ -975,7 +930,6 @@ function validate_element($element, $form, &$form_state) {
         $action->save();
       }
       else {
-        //$action->settings['payment_method']['settings']['sha_in'] = $offsite_payment_method;
         // Url account.
         $action->settings['payment_method']['settings']['account'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['account']['#value'];
         // PSPID.
@@ -990,8 +944,6 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['sha_in'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in']['#value'];
         // Sha-out.
         $action->settings['payment_method']['settings']['sha_out'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out']['#value'];
-        // 3D secure.
-        //$action->settings['payment_method']['settings']['3d_secure'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['3d_secure']['#value'];
         // Transaction type process.
         $action->settings['payment_method']['settings']['transaction_type_process'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['transaction_type_process']['#value'];
         // Language.
@@ -1100,7 +1052,6 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $data['ECOM_BILLTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
   $data['ECOM_BILLTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
   $data['ECOM_BILLTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
-  //$data['ECOM_BILLTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
 
   if (module_exists('commerce_shipping')) {
     $customer_profile = commerce_customer_profile_load($order->commerce_customer_shipping['und'][0]['profile_id']);
@@ -1110,11 +1061,9 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['ECOM_SHIPTO_POSTAL_COUNTRYCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['country']);
     $data['ECOM_SHIPTO_POSTAL_NAME_FIRST'] = trim($customer_profile->commerce_customer_address['und'][0]['first_name']);
     $data['ECOM_SHIPTO_POSTAL_NAME_LAST'] = trim($customer_profile->commerce_customer_address['und'][0]['last_name']);
-    //$data['ECOM_SHIPTO_POSTAL_NAME_PREFIX'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
-    // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
   }
   else {
     $data['ECOM_SHIPTO_COMPANY'] = trim($customer_profile->commerce_customer_address['und'][0]['organisation_name']);
@@ -1123,11 +1072,9 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['ECOM_SHIPTO_POSTAL_COUNTRYCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['country']);
     $data['ECOM_SHIPTO_POSTAL_NAME_FIRST'] = trim($customer_profile->commerce_customer_address['und'][0]['first_name']);
     $data['ECOM_SHIPTO_POSTAL_NAME_LAST'] = trim($customer_profile->commerce_customer_address['und'][0]['last_name']);
-    //$data['ECOM_SHIPTO_POSTAL_NAME_PREFIX'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_POSTALCODE'] = trim($customer_profile->commerce_customer_address['und'][0]['postal_code']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE1'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
     $data['ECOM_SHIPTO_POSTAL_STREET_LINE2'] = trim($customer_profile->commerce_customer_address['und'][0]['premise']);
-    // $data['ECOM_SHIPTO_POSTAL_STREET_NUMBER'] = trim($customer_profile->commerce_customer_address['und'][0]['thoroughfare']);
   }
 
   if (!empty($form_state['value']['PM']) and !empty($form_state['value']['type']) and $form_state['value']['type'] != 'other') {
@@ -1176,20 +1123,15 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $shasign = $sha_composer->compose($data);
 
   // Generate SHA security string & add hidden parameters to form.
-  $sha_sig = '';
-  // $shasuffix = $settings['sha_in'];
   foreach ($data as $name => $value) {
     if (!empty($value)) {
       $value = trim($value);
-      // Build the SHA string from all filled in parameters.
-      // $sha_sig .= $name . '=' . $value . $shasuffix;
       // Add the value as a hidden form element.
       $form[$name] = array('#type' => 'hidden', '#value' => $value);
     }
   }
 
   // Add the calculated SHA string.
-  // $form['SHASign'] = array('#type' => 'hidden', '#value' => sha($sha_sig));
   $form['SHASign'] = array('#type' => 'hidden', '#value' => $shasign);
 
   $form['submit'] = array(
@@ -1210,7 +1152,6 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
       $new_form[$key] = $value;
     }
   }
-  // $new_form['#redirect'] = $form['#action'];
   ksort($new_form);
   $form = $new_form;
 

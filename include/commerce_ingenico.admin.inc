@@ -232,7 +232,6 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $transaction->amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
       $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
       $transaction->status = COMMERCE_PAYMENT_STATUS_INGENICO_REFUND;
-      $transaction->instance_id = $transaction->instance_id;
       $transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
