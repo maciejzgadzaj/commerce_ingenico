@@ -1,8 +1,10 @@
 name = Commerce Ingenico
 description = Implements Ingenico payment services for use with Drupal Commerce.
 package = Commerce (contrib)
+core = 7.x
+configure = admin/commerce/config/payment-methods
+project = "commerce_ingenico"
 
-;Depend on libraries module.
 dependencies[] = libraries
 dependencies[] = commerce
 dependencies[] = advanced_help
@@ -10,8 +12,3 @@ dependencies[] = commerce_payment_ui
 dependencies[] = commerce_cart
 dependencies[] = commerce_checkout
 dependencies[] = commerce_order_ui
-
-core = 7.x
-configure = admin/commerce/config/payment-methods
-
-project = "commerce_ingenico"

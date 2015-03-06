@@ -8,9 +8,9 @@
  * Implements hook_default_rules_configuration().
  */
 function commerce_ingenico_example_default_rules_configuration() {
-  //Component.
+  // Component.
   $rule = rule(array(
-      'component_transactions' => array('label' => 'component transactions', 'type' => 'commerce_payment_transaction')
+      'component_transactions' => array('label' => 'component transactions', 'type' => 'commerce_payment_transaction'),
     )
   );
   $rule->label = t('Get the pending transactions and capture them.');
@@ -46,7 +46,7 @@ function commerce_ingenico_example_default_rules_configuration() {
 
   $rules['capture_transaction'] = $rule;
 
-  //Reaction rule.
+  // Reaction rule.
   $rule = rules_reaction_rule();
   $rule->label = t('Test capture transaction');
   $rule->tags = array('Commerce Order');
@@ -63,7 +63,7 @@ function commerce_ingenico_example_default_rules_configuration() {
       'view' => 'test_capture_order|page',
       'view_user:select' => 'entity-fetched',
       'entity_list:label' => t('A list of entities'),
-      'entity_list:var' => 'entity_list'
+      'entity_list:var' => 'entity_list',
     ));
 
   $loop = rules_loop(array(
@@ -92,7 +92,6 @@ function commerce_ingenico_example_default_rules_configuration() {
   ->action('component_capture_transaction', array(
     'component_transactions:select' => 'fetched-transaction:0',
   ));
-
 
   $rule->action($loop);
 

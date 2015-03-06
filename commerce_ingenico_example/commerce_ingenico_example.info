@@ -6,5 +6,3 @@ package = Commerce Ingenico
 
 dependencies[] = commerce_ingenico
 dependencies[] = views_bulk_operations
-
-files[] = commerce_ingenico_example.rules_defaults.inc
