@@ -603,7 +603,6 @@ function commerce_ingenico_delete_access($order, $transaction) {
  * Creates api object.
  */
 function commerce_ingenico_api_object($settings = array()) {
-  module_load_include('php', 'commerce_ingenico', 'commerce_ingenico.api');
   $instance = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
   return new IngenicoApi($settings + $instance['settings']);
@@ -810,7 +809,6 @@ function validate_element($element, $form, &$form_state) {
     'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
   );
 
-  include_once 'commerce_ingenico.api.php';
   $api = new IngenicoApi($settings);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
