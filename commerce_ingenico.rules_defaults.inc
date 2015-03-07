@@ -8,7 +8,8 @@
  * Implements hook_default_rules_configuration().
  */
 function commerce_ingenico_default_rules_configuration() {
-  // Reaction rule.
+  // Reaction rule triggered on cron run that updates local transaction statuses
+  // with their remote statuses.
   if (module_exists('views_bulk_operations')) {
     $rule = rules_reaction_rule();
     $rule->label = t('Compare remote status with local');
@@ -35,7 +36,7 @@ function commerce_ingenico_default_rules_configuration() {
       'item:var' => 'current_transaction',
     ));
 
-    $loop->action('perform_query', array(
+    $loop->action('commerce_ingenico_perform_query', array(
       'transaction:select' => 'current-transaction',
     ));
 
@@ -43,7 +44,7 @@ function commerce_ingenico_default_rules_configuration() {
     $rule->action('drupal_message', array(
        'message' => 'Transaction statuses were updated.',
     ));
-    $rules['rules_compare_remote_status_with_local'] = $rule;
+    $rules['commerce_ingenico_compare_remote_status_with_local'] = $rule;
   }
 
   // Reaction rule triggered on cron run that captures pending transactions.
@@ -53,11 +54,11 @@ function commerce_ingenico_default_rules_configuration() {
   $rule->active = TRUE;
   $rule
     ->event('cron')
-    ->action('batch_capture', array(
+    ->action('commerce_ingenico_batch_capture', array(
       'date' => '-1 day',
     ));
 
-  $rules['capture_transactions_on_cron_run'] = $rule;
+  $rules['commerce_ingenico_capture_transactions_on_cron_run'] = $rule;
 
   return $rules;
 }
