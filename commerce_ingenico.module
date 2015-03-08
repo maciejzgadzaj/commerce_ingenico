@@ -224,6 +224,13 @@ function commerce_ingenico_cards_redirect_callback() {
   $feedback = commerce_ingenico_get_feedback();
 
   $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
+  $api = commerce_ingenico_api_object($payment_method['settings']);
+  $api->logRequest(array(
+    '@type' => 'Response',
+    '@operation' => 'redirect',
+    '!value' => $feedback,
+  ));
+
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
     // Store the transaction.
     if (!empty($order_id)) {
@@ -628,6 +635,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
     'sha_in' => '',
     'sha_out' => '',
     'language_list' => array(),
+    'api_logs' => array(),
   );
 
   // BASIC settings.
@@ -777,6 +785,16 @@ function commerce_ingenico_settings_form($settings = NULL) {
     '#default_value' => $default_language_code,
   );
 
+  $form['api_logs'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Log the following messages for debugging'),
+    '#options' => array(
+      'request' => t('API request messages'),
+      'response' => t('API response messages'),
+    ),
+    '#default_value' => $settings['api_logs'],
+  );
+
   // Hidden form element for initial validation.
   $form['validate'] = array(
     '#type' => 'hidden',
@@ -800,15 +818,7 @@ function validate_element($element, $form, &$form_state) {
   $transaction = commerce_payment_transaction_new('ingenico', 0);
   $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
 
-  $settings = array(
-    'pspid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['pspid'],
-    'userid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['userid'],
-    'password' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['password'],
-    'sha_in' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in'],
-    'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
-  );
-
-  $api = new IngenicoApi($settings);
+  $api = new IngenicoApi($form['values']['parameter']['payment_method']['settings']['payment_method']['settings']);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
   $data = $api->getResponseData($result->data);
@@ -855,6 +865,8 @@ function validate_element($element, $form, &$form_state) {
             'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
             // Logs.
             'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+            // API logs.
+            'api_logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'],
           ),
         );
         // Save the settings for the direct payment method.
@@ -881,6 +893,8 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
         // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        // API logs.
+        $action->settings['payment_method']['settings']['api_logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'];
         // Save the settings for the direct payment method.
         $action->save();
       }
@@ -921,6 +935,8 @@ function validate_element($element, $form, &$form_state) {
             'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
             // Logs.
             'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+            // API logs.
+            'api_logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'],
           ),
         );
         // Save the settings for the direct payment method.
@@ -947,6 +963,8 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
         // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        // API logs.
+        $action->settings['payment_method']['settings']['api_logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'];
         // Save the settings for the direct payment method.
         $action->save();
       }
@@ -1130,6 +1148,12 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
 
   // Add the calculated SHA string.
   $form['SHASign'] = array('#type' => 'hidden', '#value' => $shasign);
+
+  $api->logRequest(array(
+    '@type' => 'Request',
+    '@operation' => 'redirect',
+    '!value' => $data + array('SHASign' => $shasign),
+  ));
 
   $form['submit'] = array(
     '#type' => 'submit',

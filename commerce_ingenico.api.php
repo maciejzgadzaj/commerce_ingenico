@@ -24,6 +24,7 @@ class IngenicoApi {
     $this->password = trim($settings['password']);
     $this->sha_in = trim($settings['sha_in']);
     $this->sha_out = trim($settings['sha_out']);
+    $this->api_logs = $settings['api_logs'];
   }
 
   /**
@@ -176,7 +177,20 @@ class IngenicoApi {
    */
   public function request($payment_account_type, $data, $operation) {
     $build_result = $this->buildUrl($payment_account_type, $data, $operation);
+
+    $this->logRequest(array(
+      '@type' => 'Request',
+      '@operation' => $operation,
+      '!value' => $build_result,
+    ));
+
     $result = drupal_http_request($build_result['url'], $build_result['parameters']);
+
+    $this->logRequest(array(
+      '@type' => 'Response',
+      '@operation' => $operation,
+      '!value' => $result,
+    ));
 
     return $result;
   }
@@ -278,6 +292,25 @@ class IngenicoApi {
       }
     }
     return $data;
+  }
+
+  /**
+   * Simple logger for saving both requests and responses in Drupal dblog.
+   *
+   * @param array $variables
+   *   An array of variables to construct dblog message from.
+   */
+  public function logRequest($variables) {
+    // $type will be either 'request' or 'response'. It should match 'api_logs'
+    // array keys defined in commerce_ingenico_settings_form().
+    $type = strtolower($variables['@type']);
+    if (!empty($this->api_logs[$type])) {
+      // This could be an array, or an object, or who knows what - let's wrap
+      // it then in <pre> and output a parsable string.
+      $variables['!value'] = '<pre>' . var_export($variables['!value'], TRUE) . '</pre>';
+
+      watchdog('commerce_ingenico', '@type (@operation): !value', $variables, WATCHDOG_DEBUG);
+    }
   }
 
 }
