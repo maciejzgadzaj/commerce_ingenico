@@ -634,6 +634,10 @@ function commerce_ingenico_settings_form($settings = NULL) {
     'language' => '',
     'sha_in' => '',
     'sha_out' => '',
+    'alias_manager' => array(
+      'enable_alias_manager' => 0,
+      'alias_manager_usage' => 'Do you want your payment details to be saved?',
+    ),
     'language_list' => array(),
     'api_logs' => array(),
   );
@@ -754,6 +758,35 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '#description' => t('Select payment methods that will be available.'),
       '#options' => $options,
       '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
+    );
+
+    $form['alias_manager'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Alias Manager') . theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'aliasmanager')),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    $form['alias_manager']['enable_alias_manager'] = array(
+      '#type' => 'checkbox',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'enablealiasmanager')),
+      '#title' => t('Enable Alias Manager'),
+      '#description' => t('Enabling the <a href="@alias_guide_url">Alias Manager</a> will display an additional tick box on the secure payment page that the customer can enable/disable to approve/refuse the storage of his financial profile.', array(
+        '@alias_guide_url' => url('http://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias'),
+      )),
+      '#default_value' => !empty($settings['alias_manager']['enable_alias_manager']),
+    );
+
+    $form['alias_manager']['alias_manager_usage'] = array(
+      '#type' => 'textfield',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'aliasmanagerusage')),
+      '#title' => t('A text explaining the reason for the Alias registration'),
+      '#default_value' => $settings['alias_manager']['alias_manager_usage'],
+      '#states' => array(
+        'visible' => array(
+          'input[name*="enable_alias_manager"]' => array('checked' => TRUE),
+        ),
+      ),
     );
   }
 
@@ -1121,6 +1154,11 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['CANCELURL'] = $base_root . '/commerce_ingenico/redirect';
   }
 
+  if (!empty($settings['alias_manager']['enable_alias_manager'])) {
+    $data['ALIAS'] = $user->uid;
+    $data['ALIASUSAGE'] = $settings['alias_manager']['alias_manager_usage'];
+  }
+
   // Allow modules to add or alter the data sent to Ingenico before signing.
   drupal_alter('commerce_ingenico_data', $data, $order, $settings);
 
@@ -1161,7 +1199,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   );
 
   foreach ($form as $key => $value) {
-    if ($key == '#action' || $key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+    if ($key == '#action' || $key == 'ACCEPTURL' || $key == 'ALIAS' || $key == 'ALIASUSAGE' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
       $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' ||
       $key == 'OWNERADDRESS' || $key == 'OWNERZIP' || $key == 'OWNERTOWN' || $key == 'OWNERCTY' ||
       $key == 'ECOM_BILLTO_POSTAL_CITY' || $key == 'ECOM_BILLTO_POSTAL_COUNTRYCODE' || $key == 'ECOM_BILLTO_POSTAL_NAME_FIRST' || $key == 'ECOM_BILLTO_POSTAL_NAME_LAST' ||
