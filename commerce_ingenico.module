@@ -483,9 +483,7 @@ function commerce_ingenico_load_all_pending_transactions($date = '', $transactio
   $return = array();
   $result = $query->execute();
   if (!empty($result['commerce_payment_transaction'])) {
-    foreach ($result['commerce_payment_transaction'] as $transaction_id) {
-      $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
-    }
+    $return = entity_load('commerce_payment_transaction', array_keys($result['commerce_payment_transaction']));
   }
   return $return;
 }
