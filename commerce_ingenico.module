@@ -468,7 +468,8 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
 function commerce_ingenico_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
-    ->propertyCondition('status', 'pending');
+    ->propertyCondition('payment_method', array('ingenico_offsite', 'ingenico_direct'), 'IN')
+    ->propertyCondition('status', COMMERCE_PAYMENT_STATUS_PENDING);
   if (!empty($transaction_id)) {
     $query->propertyCondition('transaction_id', $transaction_id);
   }
