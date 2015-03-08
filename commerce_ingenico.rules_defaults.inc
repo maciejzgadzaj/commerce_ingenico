@@ -14,7 +14,7 @@ function commerce_ingenico_default_rules_configuration() {
     $rule = rules_reaction_rule();
     $rule->label = t('Compare remote status with local');
     $rule->tags = array('Commerce Order');
-    $rule->active = TRUE;
+    $rule->active = FALSE;
     $rule
       ->event('cron')
       ->action('entity_fetch', array(
@@ -51,7 +51,7 @@ function commerce_ingenico_default_rules_configuration() {
   $rule = rules_reaction_rule();
   $rule->label = t('Capture transactions on cron run.');
   $rule->tags = array('Commerce Order');
-  $rule->active = TRUE;
+  $rule->active = FALSE;
   $rule
     ->event('cron')
     ->action('commerce_ingenico_batch_capture', array(
