@@ -758,6 +758,11 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '#description' => t('Select payment methods that will be available.'),
       '#options' => $options,
       '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
+      '#states' => array(
+        'visible' => array(
+          'input[name*="modify_card_types"]' => array('checked' => TRUE),
+        ),
+      ),
     );
 
     $form['alias_manager'] = array(
