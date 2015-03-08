@@ -208,6 +208,7 @@ function commerce_ingenico_menu() {
  */
 function commerce_ingenico_cards_redirect_callback() {
   global $user, $base_root;
+
   if (empty($_POST['orderID'])) {
     $order_id = $_GET['orderID'];
   }
@@ -219,7 +220,9 @@ function commerce_ingenico_cards_redirect_callback() {
   $order = commerce_order_load($order[0]);
   $order->status = 'pending';
   commerce_order_save($order);
+
   $feedback = commerce_ingenico_get_feedback();
+
   $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
     // Store the transaction.
@@ -615,7 +618,6 @@ function commerce_ingenico_api_object($settings = array()) {
  */
 function commerce_ingenico_settings_form($settings = NULL) {
   $form = array();
-  $languages = language_list();
   $language_codes = _commerce_ingenico_get_language_code_list();
 
   $settings = (array) $settings + array(
@@ -724,7 +726,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
     ),
   );
 
-  if (strstr(current_path(), 'ingenico_offsite')) {
+  if (strstr(current_path(), 'ingenico_offsite') !== FALSE) {
     $form['modify_card_types'] = array(
       '#type' => 'checkbox',
       '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'cardpreselect')),
@@ -732,9 +734,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '#description' => t('Allows customers to preselect payment type before the actual payment.'),
       '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
     );
-  }
 
-  if (strstr(current_path(), 'ingenico_offsite') != FALSE) {
     foreach (commerce_ingenico_payment_methods() as $key => $value) {
       $options[$key] = $value['BRAND'];
       $default_value[$key] = $key;
