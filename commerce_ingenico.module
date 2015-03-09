@@ -208,6 +208,7 @@ function commerce_ingenico_menu() {
  */
 function commerce_ingenico_cards_redirect_callback() {
   global $user, $base_root;
+
   if (empty($_POST['orderID'])) {
     $order_id = $_GET['orderID'];
   }
@@ -219,8 +220,17 @@ function commerce_ingenico_cards_redirect_callback() {
   $order = commerce_order_load($order[0]);
   $order->status = 'pending';
   commerce_order_save($order);
+
   $feedback = commerce_ingenico_get_feedback();
+
   $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
+  $api = commerce_ingenico_api_object($payment_method['settings']);
+  $api->logRequest(array(
+    '@type' => 'Response',
+    '@operation' => 'redirect',
+    '!value' => $feedback,
+  ));
+
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
     // Store the transaction.
     if (!empty($order_id)) {
@@ -468,7 +478,8 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
 function commerce_ingenico_load_all_pending_transactions($date = '', $transaction_id = '', $order_id = '') {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_payment_transaction')
-    ->propertyCondition('status', 'pending');
+    ->propertyCondition('payment_method', array('ingenico_offsite', 'ingenico_direct'), 'IN')
+    ->propertyCondition('status', COMMERCE_PAYMENT_STATUS_PENDING);
   if (!empty($transaction_id)) {
     $query->propertyCondition('transaction_id', $transaction_id);
   }
@@ -482,9 +493,7 @@ function commerce_ingenico_load_all_pending_transactions($date = '', $transactio
   $return = array();
   $result = $query->execute();
   if (!empty($result['commerce_payment_transaction'])) {
-    foreach ($result['commerce_payment_transaction'] as $transaction_id) {
-      $return[] = entity_load_single('commerce_payment_transaction', $transaction_id->transaction_id);
-    }
+    $return = entity_load('commerce_payment_transaction', array_keys($result['commerce_payment_transaction']));
   }
   return $return;
 }
@@ -603,7 +612,6 @@ function commerce_ingenico_delete_access($order, $transaction) {
  * Creates api object.
  */
 function commerce_ingenico_api_object($settings = array()) {
-  module_load_include('php', 'commerce_ingenico', 'commerce_ingenico.api');
   $instance = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
 
   return new IngenicoApi($settings + $instance['settings']);
@@ -617,7 +625,6 @@ function commerce_ingenico_api_object($settings = array()) {
  */
 function commerce_ingenico_settings_form($settings = NULL) {
   $form = array();
-  $languages = language_list();
   $language_codes = _commerce_ingenico_get_language_code_list();
 
   $settings = (array) $settings + array(
@@ -627,7 +634,12 @@ function commerce_ingenico_settings_form($settings = NULL) {
     'language' => '',
     'sha_in' => '',
     'sha_out' => '',
+    'alias_manager' => array(
+      'enable_alias_manager' => 0,
+      'alias_manager_usage' => 'Do you want your payment details to be saved?',
+    ),
     'language_list' => array(),
+    'api_logs' => array(),
   );
 
   // BASIC settings.
@@ -726,7 +738,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
     ),
   );
 
-  if (strstr(current_path(), 'ingenico_offsite')) {
+  if (strstr(current_path(), 'ingenico_offsite') !== FALSE) {
     $form['modify_card_types'] = array(
       '#type' => 'checkbox',
       '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'cardpreselect')),
@@ -734,9 +746,7 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '#description' => t('Allows customers to preselect payment type before the actual payment.'),
       '#default_value' => !empty($settings['modify_card_types']) ? $settings['modify_card_types'] : '',
     );
-  }
 
-  if (strstr(current_path(), 'ingenico_offsite') != FALSE) {
     foreach (commerce_ingenico_payment_methods() as $key => $value) {
       $options[$key] = $value['BRAND'];
       $default_value[$key] = $key;
@@ -748,6 +758,40 @@ function commerce_ingenico_settings_form($settings = NULL) {
       '#description' => t('Select payment methods that will be available.'),
       '#options' => $options,
       '#default_value' => !empty($settings['payment_method_types']) ? $settings['payment_method_types'] : $default_value,
+      '#states' => array(
+        'visible' => array(
+          'input[name*="modify_card_types"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    $form['alias_manager'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Alias Manager') . theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'aliasmanager')),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    $form['alias_manager']['enable_alias_manager'] = array(
+      '#type' => 'checkbox',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'enablealiasmanager')),
+      '#title' => t('Enable Alias Manager'),
+      '#description' => t('Enabling the <a href="@alias_guide_url">Alias Manager</a> will display an additional tick box on the secure payment page that the customer can enable/disable to approve/refuse the storage of his financial profile.', array(
+        '@alias_guide_url' => url('http://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias'),
+      )),
+      '#default_value' => !empty($settings['alias_manager']['enable_alias_manager']),
+    );
+
+    $form['alias_manager']['alias_manager_usage'] = array(
+      '#type' => 'textfield',
+      '#prefix' => theme('advanced_help_topic', array('module' => 'commerce_ingenico', 'topic' => 'aliasmanagerusage')),
+      '#title' => t('A text explaining the reason for the Alias registration'),
+      '#default_value' => $settings['alias_manager']['alias_manager_usage'],
+      '#states' => array(
+        'visible' => array(
+          'input[name*="enable_alias_manager"]' => array('checked' => TRUE),
+        ),
+      ),
     );
   }
 
@@ -779,6 +823,16 @@ function commerce_ingenico_settings_form($settings = NULL) {
     '#default_value' => $default_language_code,
   );
 
+  $form['api_logs'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Log the following messages for debugging'),
+    '#options' => array(
+      'request' => t('API request messages'),
+      'response' => t('API response messages'),
+    ),
+    '#default_value' => $settings['api_logs'],
+  );
+
   // Hidden form element for initial validation.
   $form['validate'] = array(
     '#type' => 'hidden',
@@ -802,16 +856,7 @@ function validate_element($element, $form, &$form_state) {
   $transaction = commerce_payment_transaction_new('ingenico', 0);
   $transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
 
-  $settings = array(
-    'pspid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['pspid'],
-    'userid' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['userid'],
-    'password' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['password'],
-    'sha_in' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_in'],
-    'sha_out' => $form['values']['parameter']['payment_method']['settings']['payment_method']['settings']['sha_out'],
-  );
-
-  include_once 'commerce_ingenico.api.php';
-  $api = new IngenicoApi($settings);
+  $api = new IngenicoApi($form['values']['parameter']['payment_method']['settings']['payment_method']['settings']);
   $result = $api->query($transaction, $pay_id = 1, $sub_id = '', $order = '');
 
   $data = $api->getResponseData($result->data);
@@ -858,6 +903,8 @@ function validate_element($element, $form, &$form_state) {
             'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
             // Logs.
             'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+            // API logs.
+            'api_logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'],
           ),
         );
         // Save the settings for the direct payment method.
@@ -884,6 +931,8 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
         // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        // API logs.
+        $action->settings['payment_method']['settings']['api_logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'];
         // Save the settings for the direct payment method.
         $action->save();
       }
@@ -924,6 +973,8 @@ function validate_element($element, $form, &$form_state) {
             'language_list' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'],
             // Logs.
             'logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'],
+            // API logs.
+            'api_logs' => $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'],
           ),
         );
         // Save the settings for the direct payment method.
@@ -950,6 +1001,8 @@ function validate_element($element, $form, &$form_state) {
         $action->settings['payment_method']['settings']['language_list'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['language_list']['#value'];
         // Logs.
         $action->settings['payment_method']['settings']['logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['logs']['#value'];
+        // API logs.
+        $action->settings['payment_method']['settings']['api_logs'] = $form_state['parameter']['payment_method']['settings']['payment_method']['settings']['api_logs']['#value'];
         // Save the settings for the direct payment method.
         $action->save();
       }
@@ -1106,6 +1159,11 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['CANCELURL'] = $base_root . '/commerce_ingenico/redirect';
   }
 
+  if (!empty($settings['alias_manager']['enable_alias_manager'])) {
+    $data['ALIAS'] = $user->uid;
+    $data['ALIASUSAGE'] = $settings['alias_manager']['alias_manager_usage'];
+  }
+
   // Allow modules to add or alter the data sent to Ingenico before signing.
   drupal_alter('commerce_ingenico_data', $data, $order, $settings);
 
@@ -1134,13 +1192,19 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   // Add the calculated SHA string.
   $form['SHASign'] = array('#type' => 'hidden', '#value' => $shasign);
 
+  $api->logRequest(array(
+    '@type' => 'Request',
+    '@operation' => 'redirect',
+    '!value' => $data + array('SHASign' => $shasign),
+  ));
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Proceed with payment'),
   );
 
   foreach ($form as $key => $value) {
-    if ($key == '#action' || $key == 'ACCEPTURL' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
+    if ($key == '#action' || $key == 'ACCEPTURL' || $key == 'ALIAS' || $key == 'ALIASUSAGE' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
       $key == 'EMAIL' || $key == 'EXCEPTIONURL' || $key == 'LANGUAGE' || $key == 'OPERATION' || $key == 'ORDERID' || $key == 'ORIG' || $key == 'PM' || $key == 'PSPID' || $key == 'TITLE' ||
       $key == 'OWNERADDRESS' || $key == 'OWNERZIP' || $key == 'OWNERTOWN' || $key == 'OWNERCTY' ||
       $key == 'ECOM_BILLTO_POSTAL_CITY' || $key == 'ECOM_BILLTO_POSTAL_COUNTRYCODE' || $key == 'ECOM_BILLTO_POSTAL_NAME_FIRST' || $key == 'ECOM_BILLTO_POSTAL_NAME_LAST' ||

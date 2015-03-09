@@ -13,7 +13,7 @@ function commerce_ingenico_rules_action_info() {
   $actions = array();
 
   // The action for sync transactions between ingenico site and drupal.
-  $actions['perform_query'] = array(
+  $actions['commerce_ingenico_perform_query'] = array(
     'label' => t('Compare status of remote transactions'),
     'parameter' => array(
       'transaction' => array(
@@ -28,7 +28,7 @@ function commerce_ingenico_rules_action_info() {
   );
 
   // The batch rule for capturing transactions.
-  $actions['batch_capture'] = array(
+  $actions['commerce_ingenico_batch_capture'] = array(
     'label' => t('Automated capturing process.'),
     'parameter' => array(
       'date' => array(
