@@ -107,7 +107,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
     else {
-      drupal_set_message(t('An error occur(@error_plus)', array('@error_plus' => $data['NCERRORPLUS'])));
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -136,6 +136,10 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
       commerce_payment_transaction_save($transaction);
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -239,6 +243,10 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       drupal_set_message(t('Refund was successful.'), 'status');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
   }
   elseif ($transaction->amount != commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $charge = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
@@ -272,6 +280,10 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -324,8 +336,8 @@ function commerce_ingenico_cancel_form_submit($form, &$form_state) {
 
   $response_data = $api->getResponseData($result->data);
   if ($response_data['NCERROR'] != 0 and empty($response_data['ACCEPTANCE'])) {
-    drupal_set_message(t('@error', array('@error' => $response_data['NCERRORPLUS'])), 'error');
-    return;
+    drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $response_data['NCERRORPLUS'])), 'error');
+    drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
   }
   else {
     if ($result->status_message == 'OK' and $result->code == 200 and $response_data['NCERROR'] == 0) {
@@ -395,7 +407,8 @@ function commerce_ingenico_transaction_delete_form_submit($form, &$form_state) {
       }
     }
     else {
-      drupal_set_message(t('The operation was not successful: @error_message', array('@error_message' => $response_data['NCERRORPLUS'])), 'error');
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $response_data['NCERRORPLUS'])), 'error');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
   // Because we modifited the menu item for delition
