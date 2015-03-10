@@ -228,7 +228,7 @@ function commerce_ingenico_cards_redirect_callback() {
   $api->logRequest(array(
     '@type' => 'Response',
     '@operation' => 'redirect',
-    '!value' => $feedback,
+    '%value' => $feedback,
   ));
 
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
@@ -1195,7 +1195,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $api->logRequest(array(
     '@type' => 'Request',
     '@operation' => 'redirect',
-    '!value' => $data + array('SHASign' => $shasign),
+    '%value' => $data + array('SHASign' => $shasign),
   ));
 
   $form['submit'] = array(
