@@ -130,7 +130,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $new_transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $new_transaction->currency_code = $transaction->currency_code;
       $new_transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
-      $new_transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+      $new_transaction->message = t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
 
       $transaction->amount = $transaction->amount - $new_transaction->amount;
@@ -153,9 +153,6 @@ function commerce_ingenico_refund_form($form, &$form_state, $order, $transaction
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
 
-  // Load and store the payment method instance for this transaction.
-  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
-  $form_state['payment_method'] = $payment_method;
   $balance = commerce_payment_order_balance($order);
   if ($balance['amount'] > 0 && $balance['amount'] < $transaction->amount) {
     $default_amount = $balance['amount'];
