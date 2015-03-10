@@ -83,7 +83,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ingenico_api_object();
+  $api = commerce_ingenico_api_object($payment_methods['settings']);
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture');
 
@@ -214,7 +214,9 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ingenico_api_object();
+
+  $payment_method_instance = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($payment_method_instance['settings']);
 
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     // Search for sub pay id.
@@ -305,7 +307,10 @@ function commerce_ingenico_cancel_form($form, &$form_state, $order, $transaction
 function commerce_ingenico_cancel_form_submit($form, &$form_state) {
   $transaction = $form_state['transaction'];
   $order = $form_state['order'];
-  $api = commerce_ingenico_api_object();
+
+  $instance = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($instance['settings']);
+
   // Perform maintenance request.
   // Search for sub pay id.
   if (strstr($transaction->remote_id, '/') != FALSE) {
