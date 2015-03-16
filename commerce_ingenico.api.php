@@ -181,7 +181,7 @@ class IngenicoApi {
     $this->logRequest(array(
       '@type' => 'Request',
       '@operation' => $operation,
-      '!value' => $build_result,
+      '%value' => $build_result,
     ));
 
     $result = drupal_http_request($build_result['url'], $build_result['parameters']);
@@ -189,7 +189,7 @@ class IngenicoApi {
     $this->logRequest(array(
       '@type' => 'Response',
       '@operation' => $operation,
-      '!value' => $result,
+      '%value' => $result,
     ));
 
     return $result;
@@ -307,9 +307,9 @@ class IngenicoApi {
     if (!empty($this->api_logs[$type])) {
       // This could be an array, or an object, or who knows what - let's wrap
       // it then in <pre> and output a parsable string.
-      $variables['!value'] = '<pre>' . var_export($variables['!value'], TRUE) . '</pre>';
+      $variables['%value'] = var_export($variables['%value'], TRUE);
 
-      watchdog('commerce_ingenico', '@type (@operation): !value', $variables, WATCHDOG_DEBUG);
+      watchdog('commerce_ingenico', '@type (@operation): <pre>%value</pre>', $variables, WATCHDOG_DEBUG);
     }
   }
 

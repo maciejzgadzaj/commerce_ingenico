@@ -228,7 +228,7 @@ function commerce_ingenico_cards_redirect_callback() {
   $api->logRequest(array(
     '@type' => 'Response',
     '@operation' => 'redirect',
-    '!value' => $feedback,
+    '%value' => $feedback,
   ));
 
   if (!empty($_GET['ACCEPTANCE']) and isset($_GET['NCERROR']) and $_GET['NCERROR'] == 0) {
@@ -1195,7 +1195,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $api->logRequest(array(
     '@type' => 'Request',
     '@operation' => 'redirect',
-    '!value' => $data + array('SHASign' => $shasign),
+    '%value' => $data + array('SHASign' => $shasign),
   ));
 
   $form['submit'] = array(
@@ -1807,7 +1807,8 @@ function commerce_ingenico_capture($transaction, $amount, $order, $payment_metho
  * Update the status of all captured transactions outside of Drupal.
  */
 function commerce_ingenico_query_update($transaction, $manual = '') {
-  $api = commerce_ingenico_api_object();
+  $instance = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($instance['settings']);
   $pay_id = explode('/', $transaction->remote_id);
   $sub_id = !empty($pay_id[1]) ? $pay_id[1] : '';
   $result = $api->query($transaction, $pay_id[0], $sub_id, $sub_id);

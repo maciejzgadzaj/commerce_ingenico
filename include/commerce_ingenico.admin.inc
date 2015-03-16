@@ -83,7 +83,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ingenico_api_object();
+  $api = commerce_ingenico_api_object($payment_methods['settings']);
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture');
 
@@ -107,7 +107,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
     else {
-      drupal_set_message(t('An error occur(@error_plus)', array('@error_plus' => $data['NCERRORPLUS'])));
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -130,12 +130,16 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $new_transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $new_transaction->currency_code = $transaction->currency_code;
       $new_transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
-      $new_transaction->message .= '<br />' . t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
+      $new_transaction->message = t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
 
       $transaction->amount = $transaction->amount - $new_transaction->amount;
       $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
       commerce_payment_transaction_save($transaction);
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -149,9 +153,6 @@ function commerce_ingenico_refund_form($form, &$form_state, $order, $transaction
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
 
-  // Load and store the payment method instance for this transaction.
-  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
-  $form_state['payment_method'] = $payment_method;
   $balance = commerce_payment_order_balance($order);
   if ($balance['amount'] > 0 && $balance['amount'] < $transaction->amount) {
     $default_amount = $balance['amount'];
@@ -214,7 +215,9 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ingenico_api_object();
+
+  $payment_method_instance = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($payment_method_instance['settings']);
 
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     // Search for sub pay id.
@@ -235,6 +238,10 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       $transaction->message .= '<br />' . t('Refunded: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($transaction);
       drupal_set_message(t('Refund was successful.'), 'status');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
@@ -272,6 +279,10 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
       drupal_set_message(t('Refund was successful.'), 'status');
       drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
+    else {
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $data['NCERRORPLUS'])), 'error');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
+    }
   }
 
 }
@@ -305,7 +316,10 @@ function commerce_ingenico_cancel_form($form, &$form_state, $order, $transaction
 function commerce_ingenico_cancel_form_submit($form, &$form_state) {
   $transaction = $form_state['transaction'];
   $order = $form_state['order'];
-  $api = commerce_ingenico_api_object();
+
+  $instance = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($instance['settings']);
+
   // Perform maintenance request.
   // Search for sub pay id.
   if (strstr($transaction->remote_id, '/') != FALSE) {
@@ -319,8 +333,8 @@ function commerce_ingenico_cancel_form_submit($form, &$form_state) {
 
   $response_data = $api->getResponseData($result->data);
   if ($response_data['NCERROR'] != 0 and empty($response_data['ACCEPTANCE'])) {
-    drupal_set_message(t('@error', array('@error' => $response_data['NCERRORPLUS'])), 'error');
-    return;
+    drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $response_data['NCERRORPLUS'])), 'error');
+    drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
   }
   else {
     if ($result->status_message == 'OK' and $result->code == 200 and $response_data['NCERROR'] == 0) {
@@ -390,7 +404,8 @@ function commerce_ingenico_transaction_delete_form_submit($form, &$form_state) {
       }
     }
     else {
-      drupal_set_message(t('The operation was not successful: @error_message', array('@error_message' => $response_data['NCERRORPLUS'])), 'error');
+      drupal_set_message(t('There was an error processing your request: @error_plus', array('@error_plus' => $response_data['NCERRORPLUS'])), 'error');
+      drupal_goto('admin/commerce/orders/' . $order->order_id . '/payment');
     }
   }
   // Because we modifited the menu item for delition
