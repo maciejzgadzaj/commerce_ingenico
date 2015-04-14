@@ -436,7 +436,7 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
       $data = $api->getResponseData($result->data);
       $order_ids = $data['orderID'];
       $order_id = explode('-', $order_ids);
-      $transaction = commerce_ingenico_load_all_pending_transactions($transaction_id = '', $order_id[0]);
+      $transaction = commerce_ingenico_load_all_pending_transactions('', $transaction_id = '', $order_id[0]);
       $transaction = reset($transaction);
       if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
         $transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
