@@ -216,7 +216,7 @@ class IngenicoApi {
         $url = 'https://' . self::DOMAIN . '/ncol/prod/orderdirect.asp';
       }
       elseif ($operation == 'capture' or $operation == 'refund' or $operation == 'cancel') {
-        $url = 'https://' . self::DOMAIN . '/ncol/prod/maintenancedirect.asp.';
+        $url = 'https://' . self::DOMAIN . '/ncol/prod/maintenancedirect.asp';
       }
       elseif ($operation == 'query') {
         $url = 'https://' . self::DOMAIN . '/ncol/prod/querydirect.asp';
