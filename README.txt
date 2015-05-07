@@ -47,7 +47,9 @@ Installing & configuring the Ingenico payment method in Drupal Commerce
 https://github.com/marlon-be/marlon-ogone
 Download zip:
 https://github.com/marlon-be/marlon-ogone/archive/master.zip
+- Place the library in sites/all/libraries/ogone
 - You should also enable library module.
+- Place the ingenico module in sites/all/modules
 - Enable the module (Go to admin/modules and search in the Commerce (Contrib) fieldset).
 - Go to Administration > Store > Configuration > Payment Methods
 - Here you can enable either one of the payment methods (Ingenico online gateway: hosted payment methods or Ingenico direct gateway - a direct payment method) or both of them.
