@@ -34,6 +34,8 @@ Configuring Ingenico
     --> Enter a pass phrase here for security purposes, and remember it for later use
   * Optionally configure the "Direct HTTP server-to-server request" settings,
     if you would like to have Ingenico contact your website directly for payment feedback, rather than providing the feedback on redirect.
+    Under "Direct HTTP server-to-server request" settings you should choose request method POST or GET 
+    Also should should tick the checkbox -  'I would like to receive transaction feedback parameters on the redirection URLs.'
     (This will avoid problems with users closing their browser after payment was received, but before the redirect back to your site occurred, and other special cases).
     --> Choose a timing setting that suits you best
     --> Set both post-payment URLs to http://<your_website_address>/commerce_ingenico/callback
