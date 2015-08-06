@@ -9,7 +9,7 @@
  * Payment method callback: checkout form.
  */
 function commerce_ingenico_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
-  if ($payment_method['method_id'] == 'ingenico_offsite' && $payment_method['settings']['modify_card_types'] === 1) {
+  if ($payment_method['method_id'] == 'ingenico_offsite' && !empty($payment_method['settings']['modify_card_types']) && $payment_method['settings']['modify_card_types'] === 1) {
     $all_payment_methods = commerce_ingenico_payment_methods();
     foreach ($payment_method['settings']['payment_method_types'] as $key => $value) {
       if (!empty($value)) {
@@ -167,7 +167,8 @@ function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane
         }
       }
     }
-
+    $order->data['payment_method'] = $payment_method['instance_id'];
+    commerce_order_save($order);
     $result = commerce_ingenico_redirect_alter_form($pane_form, $form_state_value, $order);
     foreach ($result as $key => $value) {
       if ($key == 'ACCEPTURL' || $key == 'ALIAS' || $key == 'ALIASUSAGE' || $key == 'AMOUNT' || $key == 'BRAND' || $key == 'CANCELURL' || $key == 'CN' || $key == 'CURRENCY' || $key == 'DECLINEURL' || $key == 'DEVICE' ||
@@ -181,15 +182,13 @@ function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane
         $new_form[$key] = $value['#value'];
       }
     }
-    variable_set('params_online', $new_form);
     drupal_goto($result['#action'], array('query' => $new_form));
   }
   else {
     $customer_profile = commerce_ingenico_customer_profile_load($order->commerce_customer_billing['und'][0]['profile_id']);
-    $api = commerce_ingenico_api_object();
+    $api = commerce_ingenico_api_object($payment_method['settings'], $payment_method['instance_id']);
     $result = $api->directPayments($customer_profile, $order, $pane_values);
 
-    variable_set('res_test', $result);
     $data = $api->getResponseData($result->data);
     if ($data['NCERROR'] != 0) {
       $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
@@ -226,8 +225,10 @@ function commerce_ingenico_submit_form_submit($payment_method, $pane_form, $pane
         }
       }
     }
-    if ($payment_method['settings']['3d_secure'] == 0 and $data['STATUS'] == '5') {
+    if (!empty($payment_method['settings']['3d_secure']) and $payment_method['settings']['3d_secure'] == 0 and $data['STATUS'] == '5') {
       // Delete the transaction on Ingenico site.
+	  $order->data['payment_method'] = $payment_method['instance_id'];
+	  commerce_order_save($order);
       drupal_goto('commerce_ingenico/3ds/callback', array(
         'query' => array(
           'STATUS' => !empty($data['STATUS']) ? $data['STATUS'] : '',

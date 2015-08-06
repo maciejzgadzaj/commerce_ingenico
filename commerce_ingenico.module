@@ -220,11 +220,10 @@ function commerce_ingenico_cards_redirect_callback() {
   $order = commerce_order_load($order[0]);
   $order->status = 'pending';
   commerce_order_save($order);
-
   $feedback = commerce_ingenico_get_feedback();
+  $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
-  $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
-  $api = commerce_ingenico_api_object($payment_method['settings']);
+  $api = commerce_ingenico_api_object($payment_method['settings'], $order->data['payment_method']);
   $api->logRequest(array(
     '@type' => 'Response',
     '@operation' => 'redirect',
@@ -238,7 +237,7 @@ function commerce_ingenico_cards_redirect_callback() {
       $transaction->uid = $user->uid;
       $transaction->order_id = $order->order_id;
       $transaction->payment_method = 'ingenico_offsite';
-      $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
+      $transaction->instance_id = $order->data['payment_method'];
       $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';
       $transaction->message = commerce_ingenico_status_messages($feedback['STATUS']);
       $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
@@ -247,6 +246,7 @@ function commerce_ingenico_cards_redirect_callback() {
       $transaction->remote_status = $_GET['STATUS'];
       $transaction->created = $order->created;
       $transaction->payload = $feedback;
+
       if (!empty($user->uid)) {
         commerce_payment_transaction_save($transaction);
       }
@@ -260,7 +260,7 @@ function commerce_ingenico_cards_redirect_callback() {
     $transaction->uid = $user->uid;
     $transaction->order_id = $order->order_id;
     $transaction->payment_method = 'ingenico_offsite';
-    $transaction->instance_id = 'ingenico_offsite|commerce_payment_ingenico_offsite';
+    $transaction->instance_id = $order->data['payment_method'];
     $transaction->remote_id = !empty($_GET['PAYID']) ? $_GET['PAYID'] : '';
     $transaction->message = commerce_ingenico_status_messages($_GET['STATUS']);
     $transaction->amount = $order->commerce_order_total['und'][0]['amount'];
@@ -305,7 +305,8 @@ function commerce_ingenico_menu_alter(&$items) {
  * Alter the redirect form for the offsite payment method.
  */
 function commerce_ingenico_redirect_alter_form($form, &$form_state, $order) {
-  $payment_method = commerce_payment_method_instance_load('ingenico_offsite|commerce_payment_ingenico_offsite');
+  $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
+
   $order->data['payment_redirect_key'] = drupal_hash_base64($order->changed);
   $settings = array(
     'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
@@ -417,8 +418,8 @@ function commerce_ingenico_batch_operation($transaction_id, $operation_details, 
   $order = commerce_order_load($transaction->order_id);
 
   $context['message'] = t('Process transactions "@title"', array('@title' => $transaction->payment_method)) . ' ' . $operation_details;
-
-  $api = commerce_ingenico_api_object();
+  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
+  $api = commerce_ingenico_api_object($payment_method['settings'], $transaction->instance_id);
   $result = $api->crossPayment($order, $transaction, $type = 'SAS', $operation = 'capture');
   $context['results'][] = $result;
   $_SESSION['http_request_count']++;
@@ -432,10 +433,14 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
     // Update database.
     foreach ($results as $key => $value) {
       $result = $value;
-      $api = commerce_ingenico_api_object();
-      $data = $api->getResponseData($result->data);
+  
+      $data = response_data($result->data);		  
       $order_ids = $data['orderID'];
       $order_id = explode('-', $order_ids);
+	  $order = commerce_order_load($order_id[0]);
+
+      $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);	 	  
+	  $api = commerce_ingenico_api_object($payment_method['settings'], $order->data['payment_method']);
       $transaction = commerce_ingenico_load_all_pending_transactions('', $transaction_id = '', $order_id[0]);
       $transaction = reset($transaction);
       if ($result->status_message == 'OK' and $result->code == 200 and $data['NCERROR'] == 0) {
@@ -471,6 +476,19 @@ function commerce_ingenico_batchs_finished($success, $results, $operations) {
     );
   }
 }
+
+/**
+ * Get the response data.
+ */
+function response_data($result_data) {
+    $xml = simplexml_load_string($result_data);
+    if (!empty($xml)) {
+      foreach ($xml->attributes() as $key => $value) {
+        $data[$key] = (string) $value;
+      }
+    }
+    return $data;
+  }
 
 /**
  * Loads transactions by date, transaction_id or order_id.
@@ -522,14 +540,13 @@ function commerce_ingenico_3d_secure_callback() {
   else {
     $order_id = check_plain($_POST['ORDERID']);
   }
-  variable_set('post_3D', $_POST);
-  variable_set('get_3D', $_GET);
+
   $order = commerce_order_load($order_id);
   $order->status = 'pending';
   commerce_order_save($order);
   $feedback = commerce_ingenico_get_feedback();
 
-  $payment_method = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+  $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
   // Store the transaction.
   if (!empty($order_id)) {
     $transaction = commerce_payment_transaction_new('ingenico_direct', $order->order_id);
@@ -611,10 +628,16 @@ function commerce_ingenico_delete_access($order, $transaction) {
 /**
  * Creates api object.
  */
-function commerce_ingenico_api_object($settings = array()) {
-  $instance = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+function commerce_ingenico_api_object($settings = '', $payment_method) {
+  if (empty($settings)) {
+	$instance = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+	return new IngenicoApi($instance['settings'], 'ingenico_direct|commerce_payment_ingenico_direct');
+  }
+  else {
+	return new IngenicoApi($settings, $payment_method);
+  }
 
-  return new IngenicoApi($settings + $instance['settings']);
+
 }
 
 /**
@@ -1146,7 +1169,7 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
     $data['OPERATION'] = 'RES';
   }
 
-  if ($settings['modify_card_types'] == 1) {
+  if (!empty($settings['modify_card_types']) and $settings['modify_card_types'] == 1) {
     $data['ACCEPTURL'] = $base_root . '/commerce_ingenico/redirect';
     $data['DECLINEURL'] = $base_root . '/commerce_ingenico/redirect';
     $data['EXCEPTIONURL'] = $base_root . '/commerce_ingenico/redirect';
@@ -1174,7 +1197,8 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   $url = variable_get('commerce_ingenico_provider_url', 'https://secure.ogone.com/ncol/');
   $url .= $settings['account'] . '/orderstandard_utf8.asp';
   $form['#action'] = $url;
-  $api = commerce_ingenico_api_object($settings);
+
+  $api = commerce_ingenico_api_object($settings, $settings['payment_method']);
   // Get the hash algorithm.
   $sha_composer = $api->preparePhraseToHash('sha_in', $settings['sha_algorithm']);
   // Hash the sha phrace with the billing data.
@@ -1218,6 +1242,8 @@ function commerce_ingenico_build_redirect_form($form, &$form_state, $order, $set
   }
   ksort($new_form);
   $form = $new_form;
+  $order->data['payment_method'] = $settings['payment_method'];
+  commerce_order_save($order);
 
   return $form;
 }
@@ -1808,7 +1834,7 @@ function commerce_ingenico_capture($transaction, $amount, $order, $payment_metho
  */
 function commerce_ingenico_query_update($transaction, $manual = '') {
   $instance = commerce_payment_method_instance_load($transaction->instance_id);
-  $api = commerce_ingenico_api_object($instance['settings']);
+  $api = commerce_ingenico_api_object($instance['settings'], $transaction->instance_id);
   $pay_id = explode('/', $transaction->remote_id);
   $sub_id = !empty($pay_id[1]) ? $pay_id[1] : '';
   $result = $api->query($transaction, $pay_id[0], $sub_id, $sub_id);

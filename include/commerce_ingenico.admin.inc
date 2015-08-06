@@ -83,7 +83,8 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
     '@order_id' => $order->order_id,
     '@site_name' => variable_get('site_name', ''),
   ));
-  $api = commerce_ingenico_api_object($payment_methods['settings']);
+  $api = commerce_ingenico_api_object($payment_methods['settings'], $payment_methods['instance_id']);
+
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     $result = $api->crossPayment($order, $transaction, $type = 'SAL', $operation = 'capture');
 
@@ -129,7 +130,7 @@ function commerce_ingenico_capture_form_submit($form, &$form_state) {
       $new_transaction->remote_id = !empty($data['PAYIDSUB']) ? $data['PAYID'] . '/' . $data['PAYIDSUB'] : $data['PAYID'];
       $new_transaction->status = COMMERCE_INGENICO_PAYMENT_STATUS_CAPTURED;
       $new_transaction->currency_code = $transaction->currency_code;
-      $new_transaction->instance_id = 'ingenico_direct|commerce_payment_ingenico_direct';
+      $new_transaction->instance_id = $payment_methods['instance_id'];
       $new_transaction->message = t('Captured: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
       commerce_payment_transaction_save($new_transaction);
 
@@ -217,7 +218,7 @@ function commerce_ingenico_refund_form_submit($form, &$form_state) {
   ));
 
   $payment_method_instance = commerce_payment_method_instance_load($transaction->instance_id);
-  $api = commerce_ingenico_api_object($payment_method_instance['settings']);
+  $api = commerce_ingenico_api_object($payment_method_instance['settings'], $payment_method_instance['instance_id']);
 
   if ($transaction->amount == commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code)) {
     // Search for sub pay id.
@@ -318,7 +319,7 @@ function commerce_ingenico_cancel_form_submit($form, &$form_state) {
   $order = $form_state['order'];
 
   $instance = commerce_payment_method_instance_load($transaction->instance_id);
-  $api = commerce_ingenico_api_object($instance['settings']);
+  $api = commerce_ingenico_api_object($instance['settings'], $instance['instance_id']);
 
   // Perform maintenance request.
   // Search for sub pay id.

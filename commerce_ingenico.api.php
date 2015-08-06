@@ -18,7 +18,8 @@ class IngenicoApi {
   /**
    * Set merchant credentials.
    */
-  public function __construct($settings) {
+  public function __construct($settings, $payment_method = '') {
+	$this->payment_method = trim($payment_method);  
     $this->merchant_id = trim($settings['pspid']);
     $this->user_id = trim($settings['userid']);
     $this->password = trim($settings['password']);
@@ -41,7 +42,7 @@ class IngenicoApi {
       $pass_phrase = new Passphrase(trim($this->sha_out));
     }
     if (empty($sha_algorithm)) {
-      $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+      $payment_methods = commerce_payment_method_instance_load($this->payment_method);
       $sha_algorithm = $payment_methods['settings']['sha_algorithm'];
     }
     switch ($sha_algorithm) {
@@ -68,7 +69,7 @@ class IngenicoApi {
     $currency_code = empty($amount->currency_code) ? $order->commerce_order_total['und'][0]['currency_code'] : $amount->currency_code;
     $charge_amount = empty($amount->amount) ? $order->commerce_order_total['und'][0]['amount'] : $amount->amount;
 
-    $payment_methods = commerce_payment_method_instance_load('ingenico_direct|commerce_payment_ingenico_direct');
+    $payment_methods = commerce_payment_method_instance_load($this->payment_method);
 
     // Get the hash algorithm.
     $sha_composer = self::preparePhraseToHash('sha_in');
@@ -98,7 +99,7 @@ class IngenicoApi {
       'OWNERZIP' => trim($customer_profile[0]->commerce_customer_address['und'][0]['postal_code']),
       'OWNERTOWN' => trim($customer_profile[0]->commerce_customer_address['und'][0]['dependent_locality']),
       'OWNERCTY' => trim($customer_profile[0]->commerce_customer_address['und'][0]['country']),
-      'OPERATION' => (!empty($payment_methods['settings']['transaction_type_process']) and $payment_methods['settings']['transaction_type_process'] == 'sale') ? 'VEN' : '',
+      'OPERATION' => (!empty($payment_methods['settings']['transaction_type_process']) and $payment_methods['settings']['transaction_type_process'] == 'sale') ? 'VEN' : 'RES',
       'REMOTE_ADDR' => ip_address(),
       'RTIMEOUT' => trim(30),
       'ECI' => trim('7'),
@@ -107,7 +108,7 @@ class IngenicoApi {
       'PM' => 'CreditCard',
     );
     // 3d secure check.
-    if ($payment_methods['settings']['3d_secure'] == 0) {
+    if (!empty($payment_methods['settings']['3d_secure']) and $payment_methods['settings']['3d_secure'] == 0) {
       $billing_data['FLAG3D'] = 'Y';
       $billing_data['HTTP_ACCEPT'] = $_SERVER['HTTP_ACCEPT'];
       $billing_data['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
@@ -185,7 +186,6 @@ class IngenicoApi {
     ));
 
     $result = drupal_http_request($build_result['url'], $build_result['parameters']);
-
     $this->logRequest(array(
       '@type' => 'Response',
       '@operation' => $operation,
