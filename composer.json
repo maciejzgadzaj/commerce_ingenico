@@ -1,0 +1,12 @@
+{
+    "name": "drupal/commerce_ingenico",
+    "type": "drupal-module",
+    "description": "Provides Drupal Commerce integration with Ingenico payment services.",
+    "homepage": "http://drupal.org/project/commerce_ingenico",
+    "license": "GPL-2.0+",
+    "require": {
+        "drupal/commerce": "2.x-dev",
+        "marlon-be/marlon-ogone" : "~3.0.3"
+    },
+    "minimum-stability": "dev"
+}

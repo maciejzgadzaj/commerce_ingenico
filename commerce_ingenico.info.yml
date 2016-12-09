@@ -1,0 +1,7 @@
+name: Commerce Ingenico
+type: module
+description: 'Provides Drupal Commerce integration with Ingenico payment services.'
+package: Commerce (contrib)
+core: 8.x
+dependencies:
+  - commerce_payment
