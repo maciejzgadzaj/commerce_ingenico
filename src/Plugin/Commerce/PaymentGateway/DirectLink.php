@@ -24,6 +24,7 @@ use Ogone\DirectLink\DirectLinkMaintenanceRequest;
 use Ogone\DirectLink\DirectLinkMaintenanceResponse;
 use Ogone\DirectLink\DirectLinkPaymentRequest;
 use Ogone\DirectLink\DirectLinkPaymentResponse;
+use Ogone\DirectLink\Eci;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -369,10 +370,22 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $directLinkRequest->setCurrency($payment->getAmount()->getCurrencyCode());
     $directLinkRequest->setOrderid($payment->getOrder()->getOrderNumber());
+    $directLinkRequest->setCom((string) $this->t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
 
     // Use credit card alias created in DirectLink::doCreatePaymentMethod().
     $alias = new Alias($payment_method->getRemoteId());
     $directLinkRequest->setAlias($alias);
+
+    $directLinkRequest->setEmail($payment_method->getOwner()->getEmail());
+    $directLinkRequest->setCn($payment_method->getBillingProfile()->get('address')->get(0)->getGivenName() . ' ' . $payment_method->getBillingProfile()->get('address')->get(0)->getFamilyName());
+    $directLinkRequest->setOwnerAddress($payment_method->getBillingProfile()->get('address')->get(0)->getAddressLine1());
+    $directLinkRequest->setOwnerZip($payment_method->getBillingProfile()->get('address')->get(0)->getPostalCode());
+    $directLinkRequest->setOwnerTown($payment_method->getBillingProfile()->get('address')->get(0)->getLocality());
+    $directLinkRequest->setOwnerCty($payment_method->getBillingProfile()->get('address')->get(0)->getCountryCode());
+
+    // REMOTE_ADDR parameter is not yet supported in marlon-ogone 3.0.3.
+//    $directLinkRequest->setRemote_addr($_SERVER['REMOTE_ADDR']);
+    $directLinkRequest->setEci(new Eci(Eci::ECOMMERCE_WITH_SSL));
 
     $directLinkRequest->validate();
 
