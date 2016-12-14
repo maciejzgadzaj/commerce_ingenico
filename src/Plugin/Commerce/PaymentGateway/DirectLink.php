@@ -243,11 +243,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $createAliasRequest->setExceptionurl($GLOBALS['base_url']);
     $createAliasRequest->setAliasPersistedAfterUse('Y');
 
-    // We do not have access to order ID here (or do we?), so instead let's just
-    // save the payment method being created, and use its ID for alias creation.
-    $payment_method->save();
-    $createAliasRequest->setOrderid($payment_method->id());
-
     // All credit card-related parameters should not be used when generating
     // SHA signature for credit card alias, and the marlon-ogone library does
     // not provide a SHA-IN parameter filter for this, so let's generate the
