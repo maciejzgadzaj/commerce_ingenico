@@ -314,6 +314,14 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     // Use all the redirection URL query parameters as the response to process.
     $createAliasResponse = new CreateAliasResponse($location_parsed['query']);
+
+    // Validate response's SHASign.
+    $passphrase = new Passphrase($this->configuration['sha_out']);
+    $shaComposer = new AllParametersShaComposer($passphrase);
+    if (!$createAliasResponse->isValid($shaComposer)) {
+      throw new InvalidResponseException($this->t('The gateway response looks suspicious.'));
+    }
+
     if (!$createAliasResponse->isSuccessful()) {
       throw new DeclineException($this->t('Alias creation has been declined by the gateway (@error_code).', [
         '@error_code' => $createAliasResponse->getParam('NCERROR'),
