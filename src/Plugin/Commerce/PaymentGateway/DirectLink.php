@@ -239,9 +239,15 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $createAliasRequest = new CreateAliasRequest($shaComposer);
 
     $createAliasRequest->setPspid($this->configuration['pspid']);
+    // Store the alias indifinitely.
+    $createAliasRequest->setAliasPersistedAfterUse('Y');
+
+    // Standard Alias Gateway behaviour is that it wants to redirect us back
+    // after alias creation (or error) to a URL provided by us. However, we will
+    // forbid our HTTP client to follow the redirections (see below), therefore
+    // we can set both redirect URLs to anything really, as they won't matter.
     $createAliasRequest->setAccepturl($GLOBALS['base_url']);
     $createAliasRequest->setExceptionurl($GLOBALS['base_url']);
-    $createAliasRequest->setAliasPersistedAfterUse('Y');
 
     // All credit card-related parameters should not be used when generating
     // SHA signature for credit card alias, and the marlon-ogone library does
