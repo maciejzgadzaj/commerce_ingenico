@@ -154,10 +154,10 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $form['api_logging'] = [
       '#type' => 'checkboxes',
-      '#title' => t('Log the following messages for debugging'),
+      '#title' => $this->t('Log the following messages for debugging'),
       '#options' => array(
-        'request' => t('API request messages'),
-        'response' => t('API response messages'),
+        'request' => $this->t('API request messages'),
+        'response' => $this->t('API response messages'),
       ),
       '#default_value' => $this->configuration['api_logging'],
     ];
