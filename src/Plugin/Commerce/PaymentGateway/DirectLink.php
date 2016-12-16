@@ -27,6 +27,7 @@ use Ogone\DirectLink\DirectLinkPaymentResponse;
 use Ogone\DirectLink\Eci;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
+use Ogone\ParameterFilter\AliasShaInParameterFilter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -235,6 +236,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
   protected function doCreatePaymentMethod(PaymentMethodInterface $payment_method, array $payment_details) {
     $passphrase = new Passphrase($this->configuration['sha_in']);
     $shaComposer = new AllParametersShaComposer($passphrase);
+    $shaComposer->addParameterFilter(new AliasShaInParameterFilter);
 
     $createAliasRequest = new CreateAliasRequest($shaComposer);
 
@@ -248,12 +250,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // we can set both redirect URLs to anything really, as they won't matter.
     $createAliasRequest->setAccepturl($GLOBALS['base_url']);
     $createAliasRequest->setExceptionurl($GLOBALS['base_url']);
-
-    // All credit card-related parameters should not be used when generating
-    // SHA signature for credit card alias, and the marlon-ogone library does
-    // not provide a SHA-IN parameter filter for this, so let's generate the
-    // signature now, and only then add all credit card parameters.
-    $sha_sign = $createAliasRequest->getShaSign();
 
     $createAliasRequest->setCardno($payment_details['number']);
     $createAliasRequest->setCn($payment_method->getBillingProfile()->get('address')->get(0)->getGivenName() . ' ' . $payment_method->getBillingProfile()->get('address')->get(0)->getFamilyName());
@@ -269,7 +265,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
     $body = $createAliasRequest->toArray();
-    $body['SHASIGN'] = $sha_sign;
+    $body['SHASIGN'] = $createAliasRequest->getShaSign();
 
     // Log the request message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['request'])) {

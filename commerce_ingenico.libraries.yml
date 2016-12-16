@@ -1,7 +1,7 @@
 ingenico:
   remote: https://github.com/marlon-be/marlon-ogone
-  version: "3.0.3"
+  version: "3.1.0"
   license:
     name: MIT
-    url: https://github.com/marlon-be/marlon-ogone/blob/3.0.3/LICENSE
+    url: https://github.com/marlon-be/marlon-ogone/blob/3.1.0/LICENSE
     gpl-compatible: true
