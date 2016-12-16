@@ -25,6 +25,8 @@ use Ogone\DirectLink\DirectLinkMaintenanceResponse;
 use Ogone\DirectLink\DirectLinkPaymentRequest;
 use Ogone\DirectLink\DirectLinkPaymentResponse;
 use Ogone\DirectLink\Eci;
+use Ogone\DirectLink\MaintenanceOperation;
+use Ogone\DirectLink\PaymentOperation;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 use Ogone\ParameterFilter\AliasShaInParameterFilter;
@@ -368,8 +370,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setUserId($this->configuration['userid']);
     $directLinkRequest->setPassword($this->configuration['password']);
 
-    $operation = $capture ? DirectLinkPaymentRequest::OPERATION_REQUEST_DIRECT_SALE : DirectLinkPaymentRequest::OPERATION_REQUEST_AUTHORIZATION;
-    $directLinkRequest->setOperation($operation);
+    $operation = $capture ? PaymentOperation::REQUEST_FOR_DIRECT_SALE : PaymentOperation::REQUEST_FOR_AUTHORISATION;
+    $directLinkRequest->setOperation(new PaymentOperation($operation));
 
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
@@ -482,8 +484,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) ($amount->getNumber() * 100));
 
-    $operation = $balance->subtract($amount)->isZero() ? DirectLinkMaintenanceRequest::OPERATION_CAPTURE_LAST_OR_FULL : DirectLinkMaintenanceRequest::OPERATION_CAPTURE_PARTIAL;
-    $directLinkRequest->setOperation($operation);
+    $operation = $balance->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_CAPTURE_LAST_OR_FULL : MaintenanceOperation::OPERATION_CAPTURE_PARTIAL;
+    $directLinkRequest->setOperation(new MaintenanceOperation($operation));
 
     $directLinkRequest->validate();
 
@@ -561,7 +563,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setPassword($this->configuration['password']);
     $directLinkRequest->setPayId($payment->getRemoteId());
 
-    $directLinkRequest->setOperation(DirectLinkMaintenanceRequest::OPERATION_AUTHORISATION_DELETE_AND_CLOSE);
+    $operation = MaintenanceOperation::OPERATION_AUTHORISATION_DELETE_AND_CLOSE;
+    $directLinkRequest->setOperation(new MaintenanceOperation($operation));
 
     $directLinkRequest->validate();
 
@@ -648,8 +651,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) ($amount->getNumber() * 100));
 
-    $operation = $balance->subtract($amount)->isZero() ? DirectLinkMaintenanceRequest::OPERATION_REFUND_LAST_OR_FULL : DirectLinkMaintenanceRequest::OPERATION_REFUND_PARTIAL;
-    $directLinkRequest->setOperation($operation);
+    $operation = $balance->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_REFUND_LAST_OR_FULL : MaintenanceOperation::OPERATION_REFUND_PARTIAL;
+    $directLinkRequest->setOperation(new MaintenanceOperation($operation));
 
     $directLinkRequest->validate();
 
