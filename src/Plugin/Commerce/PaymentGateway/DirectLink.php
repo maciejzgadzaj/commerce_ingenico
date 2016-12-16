@@ -5,6 +5,7 @@ namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\commerce_ingenico\PluginForm\PaymentRenewAuthorizationForm;
 use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Entity\PaymentInterface;
 use Drupal\commerce_payment\Entity\PaymentMethodInterface;
@@ -75,6 +76,17 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $container->get('plugin.manager.commerce_payment_method_type'),
       $container->get('http_client')
     );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getDefaultForms() {
+    $default_forms = parent::getDefaultForms();
+
+    $default_forms['renew-payment-authorization'] = 'Drupal\commerce_ingenico\PluginForm\PaymentRenewAuthorizationForm';
+
+    return $default_forms;
   }
 
   /**
@@ -202,6 +214,24 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $this->configuration['api_logging'] = $values['api_logging'];
 //      $this->configuration['3d_secure'] = $values['3d_secure'];
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildPaymentOperations(PaymentInterface $payment) {
+    $operations = parent::buildPaymentOperations($payment);
+
+    $access = $payment->getState()->value == 'authorization';
+    $operations['renew_authorization'] = [
+      'title' => $this->t('Renew authorization'),
+      'page_title' => $this->t('Renew payment authorization'),
+      'plugin_form' => 'renew-payment-authorization',
+      'access' => $access,
+      'weight' => 10,
+    ];
+
+    return $operations;
   }
 
   /**
@@ -615,6 +645,98 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     }
 
     $payment->state = 'authorization_voided';
+    $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
+    $payment->save();
+  }
+
+  /**
+   * Renews the authorization for the given payment.
+   *
+   * Only authorizations for payments in the 'authorization' state can be
+   * renewed.
+   *
+   * @param \Drupal\commerce_payment\Entity\PaymentInterface $payment
+   *   The payment to renew the authorization for.
+   *
+   * @throws \InvalidArgumentException
+   *   Thrown when the payment is not in the 'authorization' state.
+   * @throws \Drupal\commerce_payment\Exception\InvalidResponseException
+   *   Thrown when the invalid response is returned by the gateway.
+   * @throws \Drupal\commerce_payment\Exception\DeclineException
+   *   Thrown when the transaction is declined by the gateway.
+   *
+   * @see DirectLink::buildPaymentOperations()
+   * @see DirectLink::getDefaultForms()
+   *
+   * @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink/maintenance
+   */
+  public function renewAuthorization(PaymentInterface $payment) {
+    if ($payment->getState()->value != 'authorization') {
+      throw new \InvalidArgumentException($this->t('Only authorizations for payments in the "authorization" state can be renewed.'));
+    }
+
+    $passphrase = new Passphrase($this->configuration['sha_in']);
+    $shaComposer = new AllParametersShaComposer($passphrase);
+
+    $directLinkRequest = new DirectLinkMaintenanceRequest($shaComposer);
+
+    $directLinkRequest->setPspid($this->configuration['pspid']);
+    $directLinkRequest->setUserId($this->configuration['userid']);
+    $directLinkRequest->setPassword($this->configuration['password']);
+    $directLinkRequest->setPayId($payment->getRemoteId());
+
+    $operation = MaintenanceOperation::OPERATION_AUTHORISATION_RENEW;
+    $directLinkRequest->setOperation(new MaintenanceOperation($operation));
+
+    $directLinkRequest->validate();
+
+    $ogone_uri = $this->getMode() == 'live' ? DirectLinkMaintenanceRequest::PRODUCTION : DirectLinkMaintenanceRequest::TEST;
+    $directLinkRequest->setOgoneUri($ogone_uri);
+
+    // We cannot use magic set method to AbstractRequest::__call the SHASIGN
+    // value (as it is not on the list of Ogone fields), so let's get all
+    // already set parameters, and add SHASIGN to them here.
+    $body = $directLinkRequest->toArray();
+    $body['SHASIGN'] = $directLinkRequest->getShaSign();
+
+    // Log the request message if request logging is enabled.
+    if (!empty($this->configuration['api_logging']['request'])) {
+      \Drupal::logger('commerce_ingenico')
+        ->debug('DirectLink renew authorization request: @url <pre>@body</pre>', [
+          '@url' => $directLinkRequest->getOgoneUri(),
+          '@body' => var_export($body, TRUE),
+        ]);
+    }
+
+    // Perform the request to Ingenico API.
+    $options = [
+      'form_params' => $body,
+    ];
+    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+
+    // Log the response message if request logging is enabled.
+    if (!empty($this->configuration['api_logging']['response'])) {
+      \Drupal::logger('commerce_ingenico')
+        ->debug('DirectLink renew authorization response: <pre>@body</pre>', [
+          '@body' => (string) $response->getBody(),
+        ]);
+    }
+
+    // Validate the API response.
+    if ($response->getStatusCode() != 200) {
+      throw new InvalidResponseException($this->t('The request returned with error code @http_code.', ['@http_code' => $response->getStatusCode()]));
+    }
+    elseif (!$response->getBody()) {
+      throw new InvalidResponseException($this->t('The response did not have a body.'));
+    }
+
+    $directLinkResponse = new DirectLinkMaintenanceResponse($response->getBody());
+    if (!$directLinkResponse->isSuccessful()) {
+      throw new DeclineException($this->t('Transaction has been declined by the gateway (@error_code).', [
+        '@error_code' => $directLinkResponse->getParam('NCERROR'),
+      ]), $directLinkResponse->getParam('NCERROR'));
+    }
+
     $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
     $payment->save();
   }
