@@ -390,8 +390,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setOwnerTown($payment_method->getBillingProfile()->get('address')->get(0)->getLocality());
     $directLinkRequest->setOwnerCty($payment_method->getBillingProfile()->get('address')->get(0)->getCountryCode());
 
-    // REMOTE_ADDR parameter is not yet supported in marlon-ogone 3.0.3.
-//    $directLinkRequest->setRemote_addr($_SERVER['REMOTE_ADDR']);
+    $directLinkRequest->setRemote_addr($_SERVER['REMOTE_ADDR']);
     $directLinkRequest->setEci(new Eci(Eci::ECOMMERCE_WITH_SSL));
 
     $directLinkRequest->validate();
