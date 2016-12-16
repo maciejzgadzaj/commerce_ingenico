@@ -292,6 +292,9 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
    * @param array $payment_details
    *   The gateway-specific payment details.
    *
+   * @return \Ogone\DirectLink\Alias
+   *   A credit card alias returned by the payment gateway.
+   *
    * @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias-gateway
    */
   protected function doCreatePaymentMethod(PaymentMethodInterface $payment_method, array $payment_details) {
