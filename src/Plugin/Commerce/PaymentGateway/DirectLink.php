@@ -105,6 +105,12 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
         'response' => 'response',
       ],
 //      '3d_secure' => '',
+      'whitelabel' => [
+        'base_url' => [
+          'test' => '',
+          'live' => '',
+        ],
+      ],
     ] + parent::defaultConfiguration();
   }
 
@@ -187,6 +193,27 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 //      '#default_value' => $this->configuration['3d_secure'],
 //    ];
 
+    $form['whitelabel'] = [
+      '#type' => 'details',
+      '#title' => $this->t('White label'),
+      '#description' => $this->t('Only provide these URLs when using a white label clone of Ingenico payment gateway.'),
+      '#open' => !empty($this->configuration['whitelabel']['base_url']['test']) || !empty($this->configuration['whitelabel']['base_url']['live']),
+    ];
+
+    $form['whitelabel']['base_url_test'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Test API base URL'),
+      '#description' => $this->t('Including trailing slash. For example: <em>https://mdepayments.epdq.co.uk/</em>'),
+      '#default_value' => $this->configuration['whitelabel']['base_url']['test'],
+    ];
+
+    $form['whitelabel']['base_url_live'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Live API base URL'),
+      '#description' => $this->t('Including trailing slash. For example: <em>https://payments.epdq.co.uk/</em>'),
+      '#default_value' => $this->configuration['whitelabel']['base_url']['live'],
+    ];
+
     return $form;
   }
 
@@ -213,6 +240,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $this->configuration['sha_out'] = $values['sha_out'];
       $this->configuration['api_logging'] = $values['api_logging'];
 //      $this->configuration['3d_secure'] = $values['3d_secure'];
+      $this->configuration['whitelabel']['base_url']['test'] = $values['whitelabel']['base_url_test'];
+      $this->configuration['whitelabel']['base_url']['live'] = $values['whitelabel']['base_url_live'];
     }
   }
 
@@ -290,9 +319,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $createAliasRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? CreateAliasRequest::PRODUCTION : CreateAliasRequest::TEST;
-    $createAliasRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -306,7 +332,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $body_log['CARDNO'] = str_pad(substr($body_log['CARDNO'], -4), strlen($body['CARDNO']), 'X', STR_PAD_LEFT);
       \Drupal::logger('commerce_ingenico')
         ->debug('AliasGateway request: @url <pre>@body</pre>', [
-          '@url' => $createAliasRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($createAliasRequest),
           '@body' => var_export($body_log, TRUE),
         ]);
     }
@@ -320,7 +346,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       'form_params' => $body,
       'allow_redirects' => FALSE,
     ];
-    $response = $this->httpClient->post($createAliasRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($createAliasRequest), $options);
 
     // Validate the API response.
     // We expect to see the redirection in the response.
@@ -425,9 +451,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $directLinkRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? DirectLinkPaymentRequest::PRODUCTION : DirectLinkPaymentRequest::TEST;
-    $directLinkRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -438,7 +461,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     if (!empty($this->configuration['api_logging']['request'])) {
       \Drupal::logger('commerce_ingenico')
         ->debug('DirectLink order request: @url <pre>@body</pre>', [
-          '@url' => $directLinkRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($directLinkRequest),
           '@body' => var_export($body, TRUE),
         ]);
     }
@@ -447,7 +470,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $options = [
       'form_params' => $body,
     ];
-    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($directLinkRequest), $options);
 
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
@@ -518,9 +541,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $directLinkRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? DirectLinkMaintenanceRequest::PRODUCTION : DirectLinkMaintenanceRequest::TEST;
-    $directLinkRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -531,7 +551,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     if (!empty($this->configuration['api_logging']['request'])) {
       \Drupal::logger('commerce_ingenico')
         ->debug('DirectLink capture request: @url <pre>@body</pre>', [
-          '@url' => $directLinkRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($directLinkRequest),
           '@body' => var_export($body, TRUE),
         ]);
     }
@@ -540,7 +560,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $options = [
       'form_params' => $body,
     ];
-    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($directLinkRequest), $options);
 
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
@@ -597,9 +617,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $directLinkRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? DirectLinkMaintenanceRequest::PRODUCTION : DirectLinkMaintenanceRequest::TEST;
-    $directLinkRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -610,7 +627,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     if (!empty($this->configuration['api_logging']['request'])) {
       \Drupal::logger('commerce_ingenico')
         ->debug('DirectLink void request: @url <pre>@body</pre>', [
-          '@url' => $directLinkRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($directLinkRequest),
           '@body' => var_export($body, TRUE),
         ]);
     }
@@ -619,7 +636,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $options = [
       'form_params' => $body,
     ];
-    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($directLinkRequest), $options);
 
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
@@ -690,9 +707,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $directLinkRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? DirectLinkMaintenanceRequest::PRODUCTION : DirectLinkMaintenanceRequest::TEST;
-    $directLinkRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -703,7 +717,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     if (!empty($this->configuration['api_logging']['request'])) {
       \Drupal::logger('commerce_ingenico')
         ->debug('DirectLink renew authorization request: @url <pre>@body</pre>', [
-          '@url' => $directLinkRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($directLinkRequest),
           '@body' => var_export($body, TRUE),
         ]);
     }
@@ -712,7 +726,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $options = [
       'form_params' => $body,
     ];
-    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($directLinkRequest), $options);
 
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
@@ -777,9 +791,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     $directLinkRequest->validate();
 
-    $ogone_uri = $this->getMode() == 'live' ? DirectLinkMaintenanceRequest::PRODUCTION : DirectLinkMaintenanceRequest::TEST;
-    $directLinkRequest->setOgoneUri($ogone_uri);
-
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
     // value (as it is not on the list of Ogone fields), so let's get all
     // already set parameters, and add SHASIGN to them here.
@@ -790,7 +801,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     if (!empty($this->configuration['api_logging']['request'])) {
       \Drupal::logger('commerce_ingenico')
         ->debug('DirectLink refund request: @url <pre>@body</pre>', [
-          '@url' => $directLinkRequest->getOgoneUri(),
+          '@url' => $this->getOgoneUri($directLinkRequest),
           '@body' => var_export($body, TRUE),
         ]);
     }
@@ -799,7 +810,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $options = [
       'form_params' => $body,
     ];
-    $response = $this->httpClient->post($directLinkRequest->getOgoneUri(), $options);
+    $response = $this->httpClient->post($this->getOgoneUri($directLinkRequest), $options);
 
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
@@ -836,6 +847,26 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
     $payment->setRefundedAmount($new_refunded_amount);
     $payment->save();
+  }
+
+  /**
+   * Returns Ingenico API URL for current mode and whitelist settings.
+   *
+   * @param CreateAliasRequest|DirectLinkPaymentRequest|DirectLinkMaintenanceRequest $request
+   *   Ingenico request object used to create the request.
+   *
+   * @return string
+   *   The Ingenico API URL.
+   */
+  protected function getOgoneUri($request) {
+    $mode = $this->getMode();
+    $ogone_uri = $mode == 'live' ? $request::PRODUCTION : $request::TEST;
+
+    if (!empty($this->configuration['whitelabel']['base_url'][$mode])) {
+      $ogone_uri = str_replace('https://secure.ogone.com/', $this->configuration['whitelabel']['base_url'][$mode], $ogone_uri);
+    }
+
+    return $ogone_uri;
   }
 
 }
