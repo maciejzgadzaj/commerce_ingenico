@@ -37,6 +37,8 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface {
 
+  // Both payment method configuration form as well as payment operations
+  // (capture/void/refund) are common to Ingenico DirectLink and e-Commerce.
   use ConfigurationTrait;
   use OperationsTrait;
 
@@ -52,6 +54,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager);
+    // We need to define httpClient here for capture/void/refund operations,
+    // as it is not passed to off-site plugins constructor.
     $this->httpClient = new Client();
   }
 
@@ -59,6 +63,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
    * {@inheritdoc}
    */
   public function onReturn(OrderInterface $order, Request $request) {
+    parent::onReturn($order, $request);
+
     // Log the response message if request logging is enabled.
     if (!empty($this->configuration['api_logging']['response'])) {
       \Drupal::logger('commerce_ingenico')
@@ -67,19 +73,75 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
         ]);
     }
 
+    // Common response processing for both redirect back and async notification.
+    $payment = $this->processFeedback($request);
+
+    // Do not update payment state here - it should be done from the received
+    // notification only, and considering that usually notification is received
+    // even before the user returns from the off-site redirect, at this point
+    // the state tends to be already the correct one.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onCancel(OrderInterface $order, Request $request) {
+    parent::onCancel($order, $request);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onNotify(Request $request) {
+    parent::onNotify($request);
+
+    // Log the response message if request logging is enabled.
+    if (!empty($this->configuration['api_logging']['response'])) {
+      \Drupal::logger('commerce_ingenico')
+        ->debug('e-Commerce notification: <pre>@body</pre>', [
+          '@body' => var_export($request->query->all(), TRUE),
+        ]);
+    }
+
+    // Common response processing for both redirect back and async notification.
+    $payment = $this->processFeedback($request);
+
+    // Let's also update payment state here - it's safer doing it from received
+    // asynchronous notification rather than from the redirect back from the
+    // off-site redirect.
+    $state = $request->query->get('STATUS') == PaymentResponse::STATUS_AUTHORISED ? 'authorization' : 'capture_completed';
+    $payment->set('state', $state);
+    $payment->setAuthorizedTime(REQUEST_TIME);
+    if ($request->query->get('STATUS') != PaymentResponse::STATUS_AUTHORISED) {
+      $payment->setCapturedTime(REQUEST_TIME);
+    }
+    $payment->save();
+  }
+
+  /**
+   * Common response processing for both redirect back and async notification.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   *
+   * @return \Drupal\commerce_payment\Entity\PaymentInterface|null
+   *   The payment entity, or NULL in case of an exception.
+   *
+   * @throws InvalidResponseException
+   *   An exception thrown if response SHASign does not validate.
+   * @throws DeclineException
+   *   An exception thrown if payment has been declined.
+   */
+  private function processFeedback(Request $request) {
     $ecommercePaymentResponse = new EcommercePaymentResponse($request->query->all());
 
-    $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-    /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
-    $payment = $payment_storage->create([
-      'state' => 'new',
-      'amount' => $order->getTotalPrice(),
-      'payment_gateway' => $this->entityId,
-      'order_id' => $order->id(),
-      'test' => $this->getMode() == 'test',
-      'remote_id' => $ecommercePaymentResponse->getParam('PAYID'),
-      'remote_state' => $ecommercePaymentResponse->getParam('STATUS'),
-    ]);
+    // Load the payment entity created in
+    // ECommerceOffsiteForm::buildConfigurationForm().
+    list(, $payment_id,) = explode('-', $ecommercePaymentResponse->getParam('orderID'));
+    $payment = $this->entityTypeManager->getStorage('commerce_payment')->load($payment_id);
+
+    $payment->setRemoteId($ecommercePaymentResponse->getParam('PAYID'));
+    $payment->setRemoteState($ecommercePaymentResponse->getParam('STATUS'));
     $payment->save();
 
     // Validate response's SHASign.
@@ -100,13 +162,7 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
       ]), $ecommercePaymentResponse->getParam('NCERROR'));
     }
 
-    $state = $request->query->get('STATUS') == PaymentResponse::STATUS_AUTHORISED ? 'authorization' : 'capture_completed';
-    $payment->set('state', $state);
-    $payment->setAuthorizedTime(REQUEST_TIME);
-    if ($request->query->get('STATUS') != PaymentResponse::STATUS_AUTHORISED) {
-      $payment->setCapturedTime(REQUEST_TIME);
-    }
-    $payment->save();
+    return $payment;
   }
 
 }

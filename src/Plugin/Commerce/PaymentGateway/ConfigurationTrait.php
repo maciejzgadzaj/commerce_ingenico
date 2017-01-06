@@ -37,6 +37,14 @@ trait ConfigurationTrait {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
+    // Once e-Commerce payment gateway is saved, display its notification URL.
+    if ($this->getPluginId() == 'ingenico_ecommerce' && !empty($this->entityId)) {
+      $form['notification_url'] = [
+        '#type' => 'markup',
+        '#markup' => $this->t('<label>Notification URL:</label> @url', ['@url' => $this->getNotifyUrl()->toString()]),
+      ];
+    }
+
     $form['pspid'] = [
       '#type' => 'textfield',
       '#title' => $this->t('PSPID'),

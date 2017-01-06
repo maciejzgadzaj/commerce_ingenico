@@ -20,18 +20,32 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
 
     /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
     $payment = $this->entity;
+    // The test property is not yet added at this point.
+    $payment->setTest($payment->getPaymentGateway()->getPlugin()->getMode() == 'test');
+    // Save the payment entity so that we can get its ID and use it for
+    // building the 'ORDERID' property for Ingenico. Then, when user returns
+    // from the off-site redirect, we will update the same payment.
+    $payment->save();
+
     /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayInterface $payment_gateway_plugin */
     $payment_gateway_plugin = $payment->getPaymentGateway()->getPlugin();
-
     $payment_gateway_configuration = $payment_gateway_plugin->getConfiguration();
 
     $passphrase = new Passphrase($payment_gateway_configuration['sha_in']);
     $shaComposer = new AllParametersShaComposer($passphrase);
 
     $ecommercePaymentRequest = new EcommercePaymentRequest($shaComposer);
-
     $ecommercePaymentRequest->setPspid($payment_gateway_configuration['pspid']);
-    $ecommercePaymentRequest->setOrderid($payment->getOrder()->getOrderNumber() . '-' . $payment->getOrder()->getCreatedTime());
+
+    $order_id_elements = [
+      $payment->getOrder()->getOrderNumber(),
+      $payment->get('payment_id')->first()->value,
+      // Add order creation timestamp to the generated ORDERID value,
+      // to avoid the same ORDERID being sent from different testing
+      // environments, which would be rejected by Ingenico.
+      $payment->getOrder()->getCreatedTime(),
+    ];
+    $ecommercePaymentRequest->setOrderid(implode('-', $order_id_elements));
     $ecommercePaymentRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $ecommercePaymentRequest->setCurrency($payment->getAmount()->getCurrencyCode());
     $ecommercePaymentRequest->setLanguage('en_US');

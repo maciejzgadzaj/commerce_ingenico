@@ -48,6 +48,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface {
 
+  // Both payment method configuration form as well as payment operations
+  // (capture/void/refund) are common to Ingenico DirectLink and e-Commerce.
   use ConfigurationTrait;
   use OperationsTrait;
 
