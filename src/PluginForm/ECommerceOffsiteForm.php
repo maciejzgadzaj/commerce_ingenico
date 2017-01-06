@@ -37,15 +37,13 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest = new EcommercePaymentRequest($shaComposer);
     $ecommercePaymentRequest->setPspid($payment_gateway_configuration['pspid']);
 
-    $order_id_elements = [
-      $payment->getOrder()->getOrderNumber(),
-      $payment->get('payment_id')->first()->value,
-      // Add order creation timestamp to the generated ORDERID value,
-      // to avoid the same ORDERID being sent from different testing
-      // environments, which would be rejected by Ingenico.
-      $payment->getOrder()->getCreatedTime(),
-    ];
-    $ecommercePaymentRequest->setOrderid(implode('-', $order_id_elements));
+    $ecommercePaymentRequest->setOrderid($payment->getOrder()->getOrderNumber() . '-' . $payment->getOrder()->getCreatedTime());
+    $ecommercePaymentRequest->setCom((string) t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
+    $ecommercePaymentRequest->setParamplus([
+      'ORDER_ID' => $payment->getOrder()->getOrderNumber(),
+      'PAYMENT_ID' => $payment->get('payment_id')->first()->value,
+    ]);
+    // Ingenico requires the AMOUNT value to be sent in decimals.
     $ecommercePaymentRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $ecommercePaymentRequest->setCurrency($payment->getAmount()->getCurrencyCode());
     $ecommercePaymentRequest->setLanguage('en_US');

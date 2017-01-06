@@ -252,11 +252,21 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $operation = $capture ? PaymentOperation::REQUEST_FOR_DIRECT_SALE : PaymentOperation::REQUEST_FOR_AUTHORISATION;
     $directLinkRequest->setOperation(new PaymentOperation($operation));
 
+    // Save payment transaction to get its ID.
+    $payment->save();
+
+    $directLinkRequest->setOrderid($payment->getOrder()->getOrderNumber() . '-' . $payment->getOrder()->getCreatedTime());
+    $directLinkRequest->setCom((string) $this->t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
+    // We don't need to send PARAMPLUS for DirectLink itself, but it will be
+    // used with 3D Secure transactions, as they are finished over e-Commerce.
+    $directLinkRequest->setParamplus([
+      'ORDER_ID' => $payment->getOrder()->getOrderNumber(),
+      'PAYMENT_ID' => $payment->get('payment_id')->first()->value,
+    ]);
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $directLinkRequest->setCurrency($payment->getAmount()->getCurrencyCode());
-    $directLinkRequest->setOrderid($payment->getOrder()->getOrderNumber() . '-' . $payment->getOrder()->getCreatedTime());
-    $directLinkRequest->setCom((string) $this->t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
+    $directLinkRequest->setLanguage('en_US');
 
     // Use credit card alias created in DirectLink::doCreatePaymentMethod().
     $alias = new Alias($payment_method->getRemoteId());

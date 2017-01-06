@@ -137,8 +137,7 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
 
     // Load the payment entity created in
     // ECommerceOffsiteForm::buildConfigurationForm().
-    list(, $payment_id,) = explode('-', $ecommercePaymentResponse->getParam('orderID'));
-    $payment = $this->entityTypeManager->getStorage('commerce_payment')->load($payment_id);
+    $payment = $this->entityTypeManager->getStorage('commerce_payment')->load($request->query->get('PAYMENT_ID'));
 
     $payment->setRemoteId($ecommercePaymentResponse->getParam('PAYID'));
     $payment->setRemoteState($ecommercePaymentResponse->getParam('STATUS'));
