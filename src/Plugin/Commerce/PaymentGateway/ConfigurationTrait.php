@@ -21,7 +21,10 @@ trait ConfigurationTrait {
         'request' => 'request',
         'response' => 'response',
       ],
-//      '3d_secure' => '',
+      '3ds' => [
+        '3d_secure' => '',
+        '3d_secure_ecommerce_gateway' => '',
+      ],
       'whitelabel' => [
         'base_url' => [
           'test' => '',
@@ -108,15 +111,55 @@ trait ConfigurationTrait {
       '#default_value' => $this->configuration['api_logging'],
     ];
 
-//    $form['3d_secure'] = [
-//      '#type' => 'radios',
-//      '#title' => $this->t('3D Secure security check of customers cards.'),
-//      '#options' => [
-//        '0' => $this->t('Request 3-D Secure authentication when available.'),
-//        '1' => $this->t('No 3-D Secure authentication required.'),
-//      ],
-//      '#default_value' => $this->configuration['3d_secure'],
-//    ];
+    // 3-D Secure authentication works only with DirectLink payment solution.
+    if ($this->getPluginId() == 'ingenico_directlink') {
+      $form['3ds'] = [
+        '#type' => 'details',
+        '#title' => $this->t('3D-Secure'),
+        '#open' => TRUE,
+      ];
+
+      // The principle of the integration of DirectLink with 3-D Secure is to
+      // initiate a payment in DirectLink mode and end it in e-Commerce mode
+      // if a cardholder authentication is requested. Therefore to be able to
+      // use 3-D Secure, we need to have a e-Commerce payment gateway defined.
+      // @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink-3-d
+      $gateways = $this->entityTypeManager->getStorage('commerce_payment_gateway')->loadByProperties(['plugin' => 'ingenico_ecommerce']);
+      $options = [];
+      foreach ($gateways as $id => $gateway) {
+        $options[$id] = $gateway->label();
+      }
+
+      if (!empty($options)) {
+        $form['3ds']['3d_secure'] = [
+          '#type' => 'radios',
+          '#options' => [
+            '1' => $this->t('Request 3-D Secure authentication when available'),
+            '0' => $this->t('No 3-D Secure authentication required'),
+          ],
+          '#default_value' => $this->configuration['3ds']['3d_secure'],
+        ];
+
+        $form['3ds']['3d_secure_ecommerce_gateway'] = [
+          '#type' => 'select',
+          '#title' => $this->t('e-Commerce gateway for 3-D Secure'),
+          '#description' => $this->t('If a cardholder 3-D Secure authentication is requested, the payments initiated in DirectLink mode will end in e-Commerce mode.'),
+          '#options' => $options,
+          '#default_value' => $this->configuration['3ds']['3d_secure_ecommerce_gateway'],
+          '#states' => [
+            'visible' => [
+              ':input[name="configuration[3ds][3d_secure]"]' => array('value' => 1),
+            ],
+          ],
+        ];
+      }
+      else {
+        $form['3ds']['info'] = [
+          '#markup' => $this->t('To use 3-D Secure, you must first add and configure Ingenico e-Commerce payment gateway.'),
+        ];
+      }
+
+    }
 
     // Settings for white label clones of Ingenico, for example BarclayCard:
     // https://www.barclaycard.co.uk/business/accepting-payments/website-payments/web-developer-resources#tabbox1
@@ -167,7 +210,7 @@ trait ConfigurationTrait {
       $this->configuration['sha_in'] = $values['sha_in'];
       $this->configuration['sha_out'] = $values['sha_out'];
       $this->configuration['api_logging'] = $values['api_logging'];
-//      $this->configuration['3d_secure'] = $values['3d_secure'];
+      $this->configuration['3ds'] = $values['3ds'];
       $this->configuration['whitelabel']['base_url']['test'] = $values['whitelabel']['base_url_test'];
       $this->configuration['whitelabel']['base_url']['live'] = $values['whitelabel']['base_url_live'];
     }

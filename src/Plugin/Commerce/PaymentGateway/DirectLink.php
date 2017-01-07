@@ -5,6 +5,7 @@ namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\commerce_ingenico\PluginForm\PaymentRenewAuthorizationForm;
 use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Entity\PaymentInterface;
@@ -37,7 +38,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Provides the HostedFields payment gateway.
  *
  * @CommercePaymentGateway(
- *   id = "ingenico_direct_link",
+ *   id = "ingenico_directlink",
  *   label = "Ingenico DirectLink (on-site)",
  *   display_label = "Ingenico DirectLink",
  *   payment_method_types = {"credit_card"},
@@ -283,6 +284,32 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setRemote_addr($_SERVER['REMOTE_ADDR']);
     $directLinkRequest->setEci(new Eci(Eci::ECOMMERCE_WITH_SSL));
 
+    if (!empty($this->configuration['3ds']['3d_secure'])) {
+      $directLinkRequest->setFlag3d('Y');
+      $directLinkRequest->setHttp_accept($_SERVER['HTTP_ACCEPT']);
+      $directLinkRequest->setHttp_user_agent($_SERVER['HTTP_USER_AGENT']);
+      $directLinkRequest->setWin3ds('MAINW');
+
+      // From PaymentProcess::buildReturnUrl(), which we don't have access to
+      // from here unfortunately.
+      $return_url = Url::fromRoute('commerce_payment.checkout.return', [
+        'commerce_order' => $payment->getOrder()->id(),
+        'step' => 'payment',
+      ], ['absolute' => TRUE])->toString();
+      // From PaymentProcess::buildCancelUrl().
+      $cancel_url = Url::fromRoute('commerce_payment.checkout.cancel', [
+        'commerce_order' => $payment->getOrder()->id(),
+        'step' => 'payment',
+      ], ['absolute' => TRUE])->toString();
+      $directLinkRequest->setAccepturl($return_url);
+      $directLinkRequest->setDeclineurl($return_url);
+      $directLinkRequest->setExceptionurl($return_url);
+      $directLinkRequest->setCancelurl($cancel_url);
+
+      $directLinkRequest->setComplus('SUCCESS');
+      $directLinkRequest->setLanguage('en_US');
+    }
+
     $directLinkRequest->validate();
 
     // We cannot use magic set method to AbstractRequest::__call the SHASIGN
@@ -320,6 +347,19 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     }
     elseif (!$response->getBody()) {
       throw new InvalidResponseException($this->t('The response did not have a body.'));
+    }
+
+    // If we received 3D Secure response HTML, display it on the page.
+    libxml_use_internal_errors(TRUE);
+    if (($xml = simplexml_load_string($response->getBody())) && isset($xml->HTML_ANSWER)) {
+      // The remaining part of communication with Ingenico for this order will
+      // be done using e-Commerce instead of DirectLink (including using
+      // e-Commerce's return and notification URLs), so we need to update
+      // the order's payment gateway to have access to these URLs allowed
+      // (see OffsitePaymentController::returnCheckoutPage() etc).
+      $payment->getOrder()->set('payment_gateway', $this->configuration['3ds']['3d_secure_ecommerce_gateway'])->save();
+      print base64_decode((string) $xml->HTML_ANSWER);
+      exit;
     }
 
     $directLinkResponse = new DirectLinkPaymentResponse($response->getBody());
