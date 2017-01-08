@@ -18,7 +18,7 @@ trait ConfigurationTrait {
       'pspid' => '',
       'userid' => '',
       'password' => '',
-      'sha_algorithm' => '',
+      'sha_algorithm' => HashAlgorithm::HASH_SHA512,
       'sha_in' => '',
       'sha_out' => '',
       'language' => 'en_US',
@@ -27,7 +27,7 @@ trait ConfigurationTrait {
         'response' => 'response',
       ],
       '3ds' => [
-        '3d_secure' => '',
+        '3d_secure' => 1,
         '3d_secure_ecommerce_gateway' => '',
       ],
       'whitelabel' => [
