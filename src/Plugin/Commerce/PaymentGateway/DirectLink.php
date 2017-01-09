@@ -121,7 +121,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
   protected function doCreatePaymentMethod(PaymentMethodInterface $payment_method, array $payment_details) {
     $passphrase = new Passphrase($this->configuration['sha_in']);
     $shaComposer = new AllParametersShaComposer($passphrase);
-    $shaComposer->addParameterFilter(new AliasShaInParameterFilter);
+    $shaComposer->addParameterFilter(new AliasShaInParameterFilter());
 
     $createAliasRequest = new CreateAliasRequest($shaComposer);
 
