@@ -3,6 +3,9 @@
 namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 
 use Drupal\Core\Form\FormStateInterface;
+use Ogone\Ecommerce\EcommercePaymentRequest;
+use Ogone\Passphrase;
+use Ogone\ShaComposer\AllParametersShaComposer;
 
 trait ConfigurationTrait {
 
@@ -17,6 +20,7 @@ trait ConfigurationTrait {
       'sha_algorithm' => '',
       'sha_in' => '',
       'sha_out' => '',
+      'language' => 'en_US',
       'api_logging' => [
         'request' => 'request',
         'response' => 'response',
@@ -99,6 +103,15 @@ trait ConfigurationTrait {
       '#description' => $this->t('The SHA-OUT Pass phrase as entered in Ingenico technical settings - "Transaction feedback" tab.'),
       '#default_value' => $this->configuration['sha_out'],
       '#required' => TRUE,
+    ];
+
+    $shaComposer = new AllParametersShaComposer(new Passphrase(''));
+    $ecommercePaymentRequest = new EcommercePaymentRequest($shaComposer);
+    $form['language'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Language'),
+      '#options' => $ecommercePaymentRequest->allowedlanguages,
+      '#default_value' => $this->configuration['language'],
     ];
 
     $form['api_logging'] = [
@@ -209,6 +222,7 @@ trait ConfigurationTrait {
       $this->configuration['sha_algorithm'] = $values['sha_algorithm'];
       $this->configuration['sha_in'] = $values['sha_in'];
       $this->configuration['sha_out'] = $values['sha_out'];
+      $this->configuration['language'] = $values['language'];
       $this->configuration['api_logging'] = $values['api_logging'];
       if (isset($values['3ds'])) {
         $this->configuration['3ds'] = $values['3ds'];

@@ -46,7 +46,7 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $ecommercePaymentRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $ecommercePaymentRequest->setCurrency($payment->getAmount()->getCurrencyCode());
-    $ecommercePaymentRequest->setLanguage('en_US');
+    $ecommercePaymentRequest->setLanguage($payment_gateway_configuration['language']);
 
     // At the beginning PaymentProcess::buildPaneForm() did not pass the
     // selected transaction mode to the offsite payment form, but we still

@@ -267,7 +267,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
     $directLinkRequest->setCurrency($payment->getAmount()->getCurrencyCode());
-    $directLinkRequest->setLanguage('en_US');
+    $directLinkRequest->setLanguage($this->configuration['language']);
 
     // Use credit card alias created in DirectLink::doCreatePaymentMethod().
     $alias = new Alias($payment_method->getRemoteId());
