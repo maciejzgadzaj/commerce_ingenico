@@ -210,7 +210,9 @@ trait ConfigurationTrait {
       $this->configuration['sha_in'] = $values['sha_in'];
       $this->configuration['sha_out'] = $values['sha_out'];
       $this->configuration['api_logging'] = $values['api_logging'];
-      $this->configuration['3ds'] = $values['3ds'];
+      if (isset($values['3ds'])) {
+        $this->configuration['3ds'] = $values['3ds'];
+      }
       $this->configuration['whitelabel']['base_url']['test'] = $values['whitelabel']['base_url_test'];
       $this->configuration['whitelabel']['base_url']['live'] = $values['whitelabel']['base_url_live'];
     }
