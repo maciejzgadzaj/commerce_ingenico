@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm as BasePaymentOffsiteForm;
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;
 use Ogone\DirectLink\PaymentOperation;
+use Ogone\Ecommerce\Alias;
 use Ogone\Ecommerce\EcommercePaymentRequest;
 use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
@@ -23,8 +24,8 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $payment = $this->entity;
     // The test property is not yet added at this point.
     $payment->setTest($payment->getPaymentGateway()->getPlugin()->getMode() == 'test');
-    // Save the payment entity so that we can get its ID and use it for
-    // building the 'ORDERID' property for Ingenico. Then, when user returns
+    // Save the payment entity so that we can get its ID and pass it
+    // to the Ingenico payment request. Then, when user returns
     // from the off-site redirect, we will update the same payment.
     $payment->save();
 
@@ -65,6 +66,26 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     // <PARAMVAR> variable will be used for building the notification URL.
     // https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/e-commerce/transaction-feedback#servertoserver-feedback
     $ecommercePaymentRequest->setParamvar($payment->getPaymentGateway()->id());
+
+    /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
+    $payment_method = $payment->getPaymentMethod();
+
+    // Use an existing alias.
+    // @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias/alias-usage#ecommerce
+    if ($remote_id = $payment_method->getRemoteId()) {
+      $ecommercePaymentRequest->setAlias(new Alias($remote_id));
+      $ecommercePaymentRequest->setAliasUsage('Use my previously stored financial details');
+    }
+    // Create a new alias.
+    // @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias/creating-an-alias#ecommerce
+    else {
+      $alias = sha1($payment->getOrder()->id() . '-' . $payment->getOrder()->getCreatedTime());
+      $ecommercePaymentRequest->setAlias(new Alias($alias));
+      $ecommercePaymentRequest->setAliasUsage('Store my financial details for future orders');
+
+      $payment_method->setRemoteId($alias);
+      $payment_method->save();
+    }
 
     $ecommercePaymentRequest->setEmail($payment->getOrder()->getEmail());
     $billing_address = $payment->getOrder()->getBillingProfile()->get('address')->first();

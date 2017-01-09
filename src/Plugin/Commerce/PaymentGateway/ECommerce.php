@@ -5,7 +5,9 @@ namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Entity\PaymentInterface;
+use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_payment\Exception\DeclineException;
 use Drupal\commerce_payment\Exception\InvalidResponseException;
 use Drupal\commerce_payment\PaymentMethodTypeManager;
@@ -63,6 +65,19 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
   /**
    * {@inheritdoc}
    */
+  public function deletePaymentMethod(PaymentMethodInterface $payment_method) {
+    // Ingenico does not support deleting credit card aliases through their API.
+    // The only option to delete an alias is to do it either manually through
+    // their UI, or using Bulk Alias management via batch file. See
+    // https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/alias
+
+    // Delete the local entity.
+    $payment_method->delete();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function onReturn(OrderInterface $order, Request $request) {
     parent::onReturn($order, $request);
 
@@ -76,6 +91,20 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
 
     // Common response processing for both redirect back and async notification.
     $payment = $this->processFeedback($request);
+
+    $payment_method = $payment->getPaymentMethod();
+    $payment_method->card_type = strtolower($request->query->get('BRAND'));
+    $payment_method->card_number = substr($request->query->get('CARDNO'), -4);
+    $card_exp_month = substr($request->query->get('ED'), 0, 2);
+    $payment_method->card_exp_month = $card_exp_month;
+    $card_exp_year = \DateTime::createFromFormat('y', substr($request->query->get('ED'), -2))->format('Y');
+    $payment_method->card_exp_year = $card_exp_year;
+
+    // Payment method expiration timestamp.
+    $expires = CreditCard::calculateExpirationTimestamp($card_exp_month, $card_exp_year);
+    $payment_method->setExpiresTime($expires);
+
+    $payment_method->save();
 
     // Do not update payment state here - it should be done from the received
     // notification only, and considering that usually notification is received
