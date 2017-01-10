@@ -4,6 +4,7 @@ namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 
 use Drupal\Core\Form\FormStateInterface;
 use Ogone\Ecommerce\EcommercePaymentRequest;
+use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 
@@ -81,9 +82,9 @@ trait ConfigurationTrait {
       '#title' => $this->t('SHA algorithm type'),
       '#description' => $this->t('You can choose from SHA-1, SHA-256 and SHA-512 algorithm types to hash your data.'),
       '#options' => [
-        'SHA-1' => 'SHA-1',
-        'SHA-256' => 'SHA-256',
-        'SHA-512' => 'SHA-512',
+        HashAlgorithm::HASH_SHA1 => 'SHA-1',
+        HashAlgorithm::HASH_SHA256 => 'SHA-256',
+        HashAlgorithm::HASH_SHA512 => 'SHA-512',
       ],
       '#default_value' => $this->configuration['sha_algorithm'],
       '#required' => TRUE,

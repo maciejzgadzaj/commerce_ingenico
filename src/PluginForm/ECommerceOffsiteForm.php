@@ -7,6 +7,7 @@ use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm as BasePaymentOffsiteF
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm;
 use Ogone\DirectLink\PaymentOperation;
 use Ogone\Ecommerce\EcommercePaymentRequest;
+use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 
@@ -32,7 +33,8 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $payment_gateway_configuration = $payment_gateway_plugin->getConfiguration();
 
     $passphrase = new Passphrase($payment_gateway_configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($payment_gateway_configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $ecommercePaymentRequest = new EcommercePaymentRequest($shaComposer);
     $ecommercePaymentRequest->setPspid($payment_gateway_configuration['pspid']);

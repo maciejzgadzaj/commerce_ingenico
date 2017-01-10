@@ -28,6 +28,7 @@ use Ogone\DirectLink\DirectLinkPaymentResponse;
 use Ogone\DirectLink\Eci;
 use Ogone\DirectLink\MaintenanceOperation;
 use Ogone\DirectLink\PaymentOperation;
+use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 use Ogone\ParameterFilter\AliasShaInParameterFilter;
@@ -84,7 +85,8 @@ trait OperationsTrait {
     }
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $directLinkRequest = new DirectLinkMaintenanceRequest($shaComposer);
 
@@ -162,7 +164,8 @@ trait OperationsTrait {
     }
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $directLinkRequest = new DirectLinkMaintenanceRequest($shaComposer);
 
@@ -252,7 +255,8 @@ trait OperationsTrait {
     }
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $directLinkRequest = new DirectLinkMaintenanceRequest($shaComposer);
 
@@ -334,7 +338,8 @@ trait OperationsTrait {
     }
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $directLinkRequest = new DirectLinkMaintenanceRequest($shaComposer);
 

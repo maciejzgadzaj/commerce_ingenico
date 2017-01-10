@@ -29,6 +29,7 @@ use Ogone\DirectLink\DirectLinkPaymentResponse;
 use Ogone\DirectLink\Eci;
 use Ogone\DirectLink\MaintenanceOperation;
 use Ogone\DirectLink\PaymentOperation;
+use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
 use Ogone\ShaComposer\AllParametersShaComposer;
 use Ogone\ParameterFilter\AliasShaInParameterFilter;
@@ -120,7 +121,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
    */
   protected function doCreatePaymentMethod(PaymentMethodInterface $payment_method, array $payment_details) {
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
     $shaComposer->addParameterFilter(new AliasShaInParameterFilter());
 
     $createAliasRequest = new CreateAliasRequest($shaComposer);
@@ -196,7 +198,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
 
     // Validate response's SHASign.
     $passphrase = new Passphrase($this->configuration['sha_out']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
     if (!$createAliasResponse->isValid($shaComposer)) {
       throw new InvalidResponseException($this->t('The gateway response looks suspicious.'));
     }
@@ -242,7 +245,8 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     }
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
 
     $directLinkRequest = new DirectLinkPaymentRequest($shaComposer);
 

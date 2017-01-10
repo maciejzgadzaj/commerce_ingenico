@@ -14,6 +14,7 @@ use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGateway
 use Drupal\commerce_price\Price;
 use GuzzleHttp\Client;
 use Ogone\Ecommerce\EcommercePaymentResponse;
+use Ogone\HashAlgorithm;
 use Ogone\Passphrase;
 use Ogone\PaymentResponse;
 use Ogone\ShaComposer\AllParametersShaComposer;
@@ -145,7 +146,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
 
     // Validate response's SHASign.
     $passphrase = new Passphrase($this->configuration['sha_out']);
-    $shaComposer = new AllParametersShaComposer($passphrase);
+    $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
+    $shaComposer = new AllParametersShaComposer($passphrase, $sha_algorithm);
     if (!$ecommercePaymentResponse->isValid($shaComposer)) {
       $payment->set('state', 'failed');
       $payment->save();
