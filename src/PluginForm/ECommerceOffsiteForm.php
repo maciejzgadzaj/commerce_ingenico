@@ -74,6 +74,21 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest->setOwnerTown($billing_address->getLocality());
     $ecommercePaymentRequest->setOwnerCty($billing_address->getCountryCode());
 
+    $ecommercePaymentRequest->setEcom_Billto_Postal_City($billing_address->getLocality());
+    $ecommercePaymentRequest->setEcom_Billto_Postal_Countrycode($billing_address->getCountryCode());
+    $ecommercePaymentRequest->setEcom_Billto_Postal_Name_First($billing_address->getGivenName());
+    $ecommercePaymentRequest->setEcom_Billto_Postal_Name_Last($billing_address->getFamilyName());
+    $ecommercePaymentRequest->setEcom_Billto_Postal_Postalcode($billing_address->getPostalCode());
+    $ecommercePaymentRequest->setEcom_Billto_Postal_Street_Line1($billing_address->getAddressLine1());
+
+    $ecommercePaymentRequest->setEcom_Shipto_Online_Email($payment->getOrder()->getEmail());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_City($billing_address->getLocality());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_Countrycode($billing_address->getCountryCode());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_Name_First($billing_address->getGivenName());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_Name_Last($billing_address->getFamilyName());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_Postalcode($billing_address->getPostalCode());
+    $ecommercePaymentRequest->setEcom_Shipto_Postal_Street_Line1($billing_address->getAddressLine1());
+
     $mobile_detect = new \Mobile_Detect();
     if ($mobile_detect->isMobile()) {
       $ecommercePaymentRequest->setDevice('mobile');

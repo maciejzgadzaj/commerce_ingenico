@@ -285,6 +285,21 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $directLinkRequest->setOwnerTown($billing_address->getLocality());
     $directLinkRequest->setOwnerCty($billing_address->getCountryCode());
 
+    $directLinkRequest->setEcom_Billto_Postal_City($billing_address->getLocality());
+    $directLinkRequest->setEcom_Billto_Postal_Countrycode($billing_address->getCountryCode());
+    $directLinkRequest->setEcom_Billto_Postal_Name_First($billing_address->getGivenName());
+    $directLinkRequest->setEcom_Billto_Postal_Name_Last($billing_address->getFamilyName());
+    $directLinkRequest->setEcom_Billto_Postal_Postalcode($billing_address->getPostalCode());
+    $directLinkRequest->setEcom_Billto_Postal_Street_Line1($billing_address->getAddressLine1());
+
+    $directLinkRequest->setEcom_Shipto_Online_Email($payment->getOrder()->getEmail());
+    $directLinkRequest->setEcom_Shipto_Postal_City($billing_address->getLocality());
+    $directLinkRequest->setEcom_Shipto_Postal_Countrycode($billing_address->getCountryCode());
+    $directLinkRequest->setEcom_Shipto_Postal_Name_First($billing_address->getGivenName());
+    $directLinkRequest->setEcom_Shipto_Postal_Name_Last($billing_address->getFamilyName());
+    $directLinkRequest->setEcom_Shipto_Postal_Postalcode($billing_address->getPostalCode());
+    $directLinkRequest->setEcom_Shipto_Postal_Street_Line1($billing_address->getAddressLine1());
+
     $directLinkRequest->setRemote_addr($_SERVER['REMOTE_ADDR']);
     $directLinkRequest->setEci(new Eci(Eci::ECOMMERCE_WITH_SSL));
 
