@@ -305,9 +305,6 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $directLinkRequest->setDeclineurl($return_url);
       $directLinkRequest->setExceptionurl($return_url);
       $directLinkRequest->setCancelurl($cancel_url);
-
-      $directLinkRequest->setComplus('SUCCESS');
-      $directLinkRequest->setLanguage('en_US');
     }
 
     $directLinkRequest->validate();
