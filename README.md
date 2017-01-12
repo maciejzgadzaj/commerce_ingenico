@@ -32,13 +32,35 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
 
  - _e-Commerce_ gateway provides multilingual support, with any off-site pages (including _3-D Secure_) being rendered in the language selected by the merchant in the gateway configuration.
 
+## Known issues
+
+ - The _Authorize only_ transaction mode is not yet supported by _Drupal Commerce_ for off-site payment gateways, therefore _e-Commerce_ gateway works only in the _Authorize and capture_ mode. There is a [pull request](https://github.com/drupalcommerce/commerce/pull/595) waiting to be merged into Drupal Commerce that will fix the issue.
+
+ - It is not yet possible to create and use credit card aliases with e-Commerce gateway, as it is not supported by Drupal Commerce yet. See relevant d.o. issue [Allow offsite payment gateways to create and use payment methods](https://www.drupal.org/node/2838380) for more information.
+
+ - When adding a new payment for orders created from the admin UI using a credit card that supports 3-D Secure, the return from the 3-D Secure pages fails. There is a [pull request](https://github.com/drupalcommerce/commerce/pull/601) waiting to be merged into Drupal Commerce that will fix the issue.
+
 ## Installation
 
 ### Configure Ingenico
 
  - Log in with your Ingenico merchant account to the [test or prod environment](https://payment-services.ingenico.com/int/en/login) (depending which one you want to configure)
 
- - In _**Configuration > Users**_: create a special API user that will be used for the  API calls by Drupal - click on the _New user_ button, enter required details, and select the _Special user for API (no access to admin)_ checkbox.
+ - Make sure your test account is [properly configured and activated](https://payment-services.ingenico.com/int/en/ogone/support/guides/user%20guides/test-account-creation/configure-account)
+
+ - In _**Configuration > Account > Your options**_ you should have at least the following options activated:
+
+   - _Fraud detection module (FDM)_
+   - _D3D (Direct Link 3D)_
+   - _DirectLink (new payments)_
+   - _Partial maintenance_
+   - _Alias Manager_
+   - _Refunds_
+   - _User Manager up to 5 users_
+
+   You might need to contact Ingenico's <a href="mailto:support@ogone.com">Customer Care</a> team to activate some of them.
+
+ - In _**Configuration > Users**_: create a special API user that will be used for the  API calls by Drupal - click on the _New user_ button, enter required details, select _Admin_ profile and check the _Special user for API (no access to admin)_ checkbox.
 
  - In _**Configuration > Technical information**_:
 
@@ -53,13 +75,14 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
 
    - Tab _**Data and origin verification**_:
      - set _URL of the merchant page containing the payment form that will call the page: orderstandard.asp_ to your site's base URL
-     - set _SHA-IN pass phrase_ twice - both for _e-Commerce & Alias Gateway_ as well as for _Ogone DirectLink and Ogone Batch (Automatic)_
+     - set _SHA-IN pass phrase_ twice - both for _e-Commerce & Alias Gateway_ as well as for _Ogone DirectLink and Ogone Batch (Automatic)_ - both keys have to be alphanumeric only and both must have the same value
      - optionally set _IP address_ to that of your server
      
    - Tab _**Transaction feedback**_:
      - In _HTTP redirection in the browser_ section:
        - no need to set _Accepturl_, _Declineurl_, _Exceptionurl_ or _Cancelurl_, as they will be added automatically to each API request
        - enable _I would like to receive transaction feedback parameters on the redirection URLs_ checkbox
+       - disable _I would like Ingenico e-Commerce Solutions to display a short text to the customer on the secure payment page if a redirection to my website is detected immediately after the payment process_ checkbox
      - In _Direct HTTP server-to-server request_ section:
        - set _Timing of the request_ to _Online but switch to a deferred request when the online requests fail_
        - set both _URLs of the merchant's post-payment page_ to the _Notification URL_ value displayed by the _e-Commerce_ payment gateway once it is added and configured in Drupal
@@ -67,6 +90,10 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
      - In _Security for request parameters_ section:
        - set _SHA-OUT pass phrase_
 
+   - Tab _**Transaction e-mails**_ (optionally):
+     - fill in your email address
+     - set _Receive transaction confirmation e-mails_ to _Yes, for all transaction submission modes_
+     - set _Receive e-mails in the event of offline transaction status changes_ to _Yes, for each offline status change (payment, cancellation, etc.)_
 
 ### Install and configure the module
 
