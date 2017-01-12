@@ -36,7 +36,7 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
 
  - The _Authorize only_ transaction mode is not yet supported by _Drupal Commerce_ for off-site payment gateways, therefore _e-Commerce_ gateway works only in the _Authorize and capture_ mode. There is a [pull request](https://github.com/drupalcommerce/commerce/pull/595) waiting to be merged into Drupal Commerce that will fix the issue.
 
- - It is not yet possible to create and use credit card aliases with e-Commerce gateway, as it is not supported by Drupal Commerce yet. See relevant d.o. issue [Allow offsite payment gateways to create and use payment methods](https://www.drupal.org/node/2838380) for more information.
+ - It is not yet possible to create and use credit card aliases with off-site e-Commerce gateway, as it is not supported by Drupal Commerce yet. See relevant d.o. issue [Allow offsite payment gateways to create and use payment methods](https://www.drupal.org/node/2838380) for more information.
 
  - When adding a new payment for orders created from the admin UI using a credit card that supports 3-D Secure, the return from the 3-D Secure pages fails. There is a [pull request](https://github.com/drupalcommerce/commerce/pull/601) waiting to be merged into Drupal Commerce that will fix the issue.
 
@@ -85,7 +85,7 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
        - disable _I would like Ingenico e-Commerce Solutions to display a short text to the customer on the secure payment page if a redirection to my website is detected immediately after the payment process_ checkbox
      - In _Direct HTTP server-to-server request_ section:
        - set _Timing of the request_ to _Online but switch to a deferred request when the online requests fail_
-       - set both _URLs of the merchant's post-payment page_ to the _Notification URL_ value displayed by the _e-Commerce_ payment gateway once it is added and configured in Drupal
+       - set both _URLs of the merchant's post-payment page_ to `https://yoursite.com/payment/notify/<PARAMVAR>`
        - set _Request method_ to _GET_
      - In _Security for request parameters_ section:
        - set _SHA-OUT pass phrase_

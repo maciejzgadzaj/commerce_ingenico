@@ -294,21 +294,28 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $directLinkRequest->setHttp_user_agent($_SERVER['HTTP_USER_AGENT']);
       $directLinkRequest->setWin3ds('MAINW');
 
-      // From PaymentProcess::buildReturnUrl(), which we don't have access to
-      // from here unfortunately.
+      // When using 3-D Secure credit card authentication the payments initiated
+      // in DirectLink mode will end in e-Commerce mode - so we need to define
+      // all e-Commerce related URLs as well.
+      // Borrowed from PaymentProcess::buildReturnUrl().
       $return_url = Url::fromRoute('commerce_payment.checkout.return', [
         'commerce_order' => $payment->getOrder()->id(),
         'step' => 'payment',
       ], ['absolute' => TRUE])->toString();
-      // From PaymentProcess::buildCancelUrl().
+      // Borrowed from PaymentProcess::buildCancelUrl().
       $cancel_url = Url::fromRoute('commerce_payment.checkout.cancel', [
         'commerce_order' => $payment->getOrder()->id(),
         'step' => 'payment',
       ], ['absolute' => TRUE])->toString();
+
       $directLinkRequest->setAccepturl($return_url);
       $directLinkRequest->setDeclineurl($return_url);
       $directLinkRequest->setExceptionurl($return_url);
       $directLinkRequest->setCancelurl($cancel_url);
+
+      // <PARAMVAR> variable will be used for building the notification URL.
+      // https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/e-commerce/transaction-feedback#servertoserver-feedback
+      $directLinkRequest->setParamvar($this->configuration['3ds']['3d_secure_ecommerce_gateway']);
     }
 
     $directLinkRequest->validate();

@@ -62,6 +62,10 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest->setCancelurl($form['#cancel_url']);
     $ecommercePaymentRequest->setBackurl($form['#cancel_url']);
 
+    // <PARAMVAR> variable will be used for building the notification URL.
+    // https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/e-commerce/transaction-feedback#servertoserver-feedback
+    $ecommercePaymentRequest->setParamvar($payment->getPaymentGateway()->id());
+
     $ecommercePaymentRequest->setEmail($payment->getOrder()->getEmail());
     $billing_address = $payment->getOrder()->getBillingProfile()->get('address')->first();
     $ecommercePaymentRequest->setCn($billing_address->getGivenName() . ' ' . $billing_address->getFamilyName());
