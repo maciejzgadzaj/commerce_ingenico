@@ -103,7 +103,7 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
    commerce require drupal/commerce_ingenico
    ```
 
-   Alternatively download the module manually together with [marlon-ogone](https://github.com/marlon-be/marlon-ogone) library.
+   Alternatively download the module manually together with [marlon-ogone](https://github.com/marlon-be/marlon-ogone) and [mobiledetectlib](https://packagist.org/packages/mobiledetect/mobiledetectlib) libraries.
 
  - Add payment gateways at _**Administration > Commerce > Configuration > Payment gateways**_. The settings for both gateways are pretty much the same and should reflect your _Ingenico_ account settings.
 

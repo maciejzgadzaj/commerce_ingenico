@@ -74,6 +74,17 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest->setOwnerTown($billing_address->getLocality());
     $ecommercePaymentRequest->setOwnerCty($billing_address->getCountryCode());
 
+    $mobile_detect = new \Mobile_Detect();
+    if ($mobile_detect->isMobile()) {
+      $ecommercePaymentRequest->setDevice('mobile');
+    }
+    elseif ($mobile_detect->isTablet()) {
+      $ecommercePaymentRequest->setDevice('tablet');
+    }
+    else {
+      $ecommercePaymentRequest->setDevice('computer');
+    }
+
     $ecommercePaymentRequest->validate();
 
     $redirect_url = $payment_gateway_plugin->getOgoneUri($ecommercePaymentRequest);

@@ -6,7 +6,8 @@
     "license": "GPL-2.0+",
     "require": {
         "drupal/commerce": "2.x-dev",
-        "marlon-be/marlon-ogone" : "~3.1.0"
+        "marlon-be/marlon-ogone" : "~3.1.0",
+        "mobiledetect/mobiledetectlib": "^2.8"
     },
     "minimum-stability": "dev"
 }
