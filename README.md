@@ -117,9 +117,16 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
 
 ### Test credit card numbers
 
- Brand                             |   Card number    |      Expiry date       | 3DS Password
------------------------------------|------------------|------------------------|--------------
- Visa                              | 4111111111111111 | Any date in the future |
- Visa with 3-D Secure              | 4000000000000002 | Any date in the future |    11111
- MasterCard with 3-D Secure        | 5300000000000006 | Any date in the future |    11111
- American Express with 3-D Secure  | 371449635311004  | Any date in the future |    11111
+ Brand                             |   Type  |   Card number    |      Expiry date       | 3DS Password
+-----------------------------------|---------|------------------|------------------------|--------------
+ Visa*                             | unknown | 4111111111111111 | Any date in the future |
+ Visa                              | credit  | 4000024329596391 | Any date in the future |
+ Visa                              | debit   | 4000068558002134 | Any date in the future |
+ MasterCard                        | credit  | 5399999999999999 | Any date in the future |
+ MasterCard                        | debit   | 5101169573112521 | Any date in the future |
+ MasterCard                        | unknown | 5100867871071536 | Any date in the future |
+ Visa with 3-D Secure              |         | 4000000000000002 | Any date in the future |    11111
+ MasterCard with 3-D Secure        |         | 5300000000000006 | Any date in the future |    11111
+ American Express with 3-D Secure  |         | 371449635311004  | Any date in the future |    11111
+
+*) Although this is a generally accepted test card, if you have configured not to accept "unknown" card types, tests with this card number will be declined.
