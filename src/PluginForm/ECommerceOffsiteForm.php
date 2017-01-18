@@ -39,10 +39,10 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest = new EcommercePaymentRequest($shaComposer);
     $ecommercePaymentRequest->setPspid($payment_gateway_configuration['pspid']);
 
-    $ecommercePaymentRequest->setOrderid($payment->getOrder()->getOrderNumber() . '-' . $payment->getOrder()->getCreatedTime());
+    $ecommercePaymentRequest->setOrderid($payment->getOrder()->id() . '-' . $payment->getOrder()->getCreatedTime());
     $ecommercePaymentRequest->setCom((string) t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
     $ecommercePaymentRequest->setParamplus([
-      'ORDER_ID' => $payment->getOrder()->getOrderNumber(),
+      'ORDER_ID' => $payment->getOrder()->id(),
       'PAYMENT_ID' => $payment->id(),
     ]);
     // Ingenico requires the AMOUNT value to be sent in decimals.
