@@ -266,7 +266,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     // used with 3D Secure transactions, as they are finished over e-Commerce.
     $directLinkRequest->setParamplus([
       'ORDER_ID' => $payment->getOrder()->getOrderNumber(),
-      'PAYMENT_ID' => $payment->get('payment_id')->first()->value,
+      'PAYMENT_ID' => $payment->id(),
     ]);
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);

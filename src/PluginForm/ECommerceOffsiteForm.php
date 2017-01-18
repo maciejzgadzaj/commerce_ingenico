@@ -43,7 +43,7 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest->setCom((string) t('Order @order_number', ['@order_number' => $payment->getOrder()->getOrderNumber()]));
     $ecommercePaymentRequest->setParamplus([
       'ORDER_ID' => $payment->getOrder()->getOrderNumber(),
-      'PAYMENT_ID' => $payment->get('payment_id')->first()->value,
+      'PAYMENT_ID' => $payment->id(),
     ]);
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $ecommercePaymentRequest->setAmount((int) $payment->getAmount()->getNumber() * 100);
