@@ -71,18 +71,13 @@ trait OperationsTrait {
    * @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink/maintenance
    */
   public function capturePayment(PaymentInterface $payment, Price $amount = NULL) {
-    if ($payment->getState()->value != 'authorization') {
-      throw new \InvalidArgumentException($this->t('Only payments in the "authorization" state can be captured.'));
+    if (!in_array($payment->getState()->value, ['authorization', 'partially_captured', 'capture_partially_refunded', 'capture_refunded'])) {
+      throw new \InvalidArgumentException($this->t("Payments in @state state can't be captured.", ['@state' => $payment->getState()->value]));
     }
 
-    // If not specified, capture the entire amount.
-    $amount = $amount ?: $payment->getAmount();
-
-    // Validate the requested amount.
-    $balance = $payment->getBalance();
-    if ($amount->greaterThan($balance)) {
-      throw new InvalidRequestException($this->t('Cannot capture more than @amount.', ['@amount' => (string) $balance]));
-    }
+    // If not specified, capture the entire uncaptured amount.
+    $uncaptured_amount = $payment->getUncapturedAmount();
+    $amount = $amount ?: $uncaptured_amount;
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
     $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
@@ -97,7 +92,7 @@ trait OperationsTrait {
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) ($amount->getNumber() * 100));
 
-    $operation = $balance->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_CAPTURE_LAST_OR_FULL : MaintenanceOperation::OPERATION_CAPTURE_PARTIAL;
+    $operation = $uncaptured_amount->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_CAPTURE_LAST_OR_FULL : MaintenanceOperation::OPERATION_CAPTURE_PARTIAL;
     $directLinkRequest->setOperation(new MaintenanceOperation($operation));
 
     $directLinkRequest->validate();
@@ -146,10 +141,10 @@ trait OperationsTrait {
       ]), $directLinkResponse->getParam('NCERROR'));
     }
 
-    $payment->state = 'capture_completed';
-    $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
-    $payment->setAmount($amount);
+    $payment->setCapturedAmount($payment->getCapturedAmount()->add($amount));
     $payment->setCapturedTime(REQUEST_TIME);
+    $payment->state = $payment->getStateSuggestion();
+    $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
     $payment->save();
   }
 
@@ -324,18 +319,13 @@ trait OperationsTrait {
    * @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink/maintenance
    */
   public function refundPayment(PaymentInterface $payment, Price $amount = NULL) {
-    if (!in_array($payment->getState()->value, ['capture_completed', 'capture_partially_refunded'])) {
-      throw new \InvalidArgumentException($this->t('Only payments in the "capture_completed" and "capture_partially_refunded" states can be refunded.'));
+    if (!in_array($payment->getState()->value, ['partially_captured', 'capture_completed', 'capture_partially_refunded'])) {
+      throw new \InvalidArgumentException($this->t("Payments in @state state can't be refunded.", ['@state' => $payment->getState()->value]));
     }
 
-    // If not specified, refund the entire amount.
-    $amount = $amount ?: $payment->getAmount();
-
-    // Validate the requested amount.
-    $balance = $payment->getBalance();
-    if ($amount->greaterThan($balance)) {
-      throw new InvalidRequestException($this->t('Cannot refund more than @amount.', ['@amount' => (string) $balance]));
-    }
+    // If not specified, refund the entire unrefunded amount.
+    $unrefunded_amount = $payment->getUnrefundedAmount();
+    $amount = $amount ?: $unrefunded_amount;
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
     $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
@@ -350,7 +340,7 @@ trait OperationsTrait {
     // Ingenico requires the AMOUNT value to be sent in decimals.
     $directLinkRequest->setAmount((int) ($amount->getNumber() * 100));
 
-    $operation = $balance->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_REFUND_LAST_OR_FULL : MaintenanceOperation::OPERATION_REFUND_PARTIAL;
+    $operation = $payment->getAuthorizedAmount()->subtract($payment->getRefundedAmount())->subtract($amount)->isZero() ? MaintenanceOperation::OPERATION_REFUND_LAST_OR_FULL : MaintenanceOperation::OPERATION_REFUND_PARTIAL;
     $directLinkRequest->setOperation(new MaintenanceOperation($operation));
 
     $directLinkRequest->validate();
@@ -399,17 +389,9 @@ trait OperationsTrait {
       ]), $directLinkResponse->getParam('NCERROR'));
     }
 
-    $old_refunded_amount = $payment->getRefundedAmount();
-    $new_refunded_amount = $old_refunded_amount->add($amount);
-    if ($new_refunded_amount->lessThan($payment->getAmount())) {
-      $payment->state = 'capture_partially_refunded';
-    }
-    else {
-      $payment->state = 'capture_refunded';
-    }
-
+    $payment->setRefundedAmount($payment->getRefundedAmount()->add($amount));
+    $payment->state = $payment->getStateSuggestion();
     $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
-    $payment->setRefundedAmount($new_refunded_amount);
     $payment->save();
   }
 

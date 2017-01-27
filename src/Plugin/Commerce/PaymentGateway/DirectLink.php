@@ -395,8 +395,10 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
     $payment->state = $capture ? 'capture_completed' : 'authorization';
     $payment->setRemoteId($directLinkResponse->getParam('PAYID'));
     $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
+    $payment->setAuthorizedAmount($payment->getAmount());
     $payment->setAuthorizedTime(REQUEST_TIME);
     if ($capture) {
+      $payment->setCapturedAmount($payment->getAmount());
       $payment->setCapturedTime(REQUEST_TIME);
     }
     $payment->save();
