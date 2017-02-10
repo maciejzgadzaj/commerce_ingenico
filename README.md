@@ -10,8 +10,6 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
 
  - Both payment gateways support _Authorize and capture_ and _Authorize only_ transaction modes, as selected on Commerce's _Checkout flow_ configuration page. The _Authorize only_ transaction mode allows merchants to capture a transaction at a later time, which can be useful for avoiding refunds.
 
-   Note that although _Authorize only_ transaction mode is built into this module, it is not yet supported by _Drupal Commerce_ for off-site payment gateways. To use it, _Drupal Commerce_ needs [this pull request](https://github.com/drupalcommerce/commerce/pull/595) to be merged first.
-
  - Both gateways support _3-D Secure_ credit card authentication when available.
 
    _e-Commerce_ does the authentication by default, without any additional configuration required (if only the [credit card being used supports it](https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink-3-d/3-d-transaction-flow-via-directlink#comments)), while in case of [_DirectLink_ _3-D Secure_](https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink-3-d) needs to be enabled first on the payment gateway configuration page.
@@ -33,8 +31,6 @@ Module provides _**[Ingenico ePayments](http://payment-services.ingenico.com/)**
  - _e-Commerce_ gateway provides multilingual support, with any off-site pages (including _3-D Secure_) being rendered in the language selected by the merchant in the gateway configuration.
 
 ## Known issues
-
- - The _Authorize only_ transaction mode is not yet supported by _Drupal Commerce_ for off-site payment gateways, therefore _e-Commerce_ gateway works only in the _Authorize and capture_ mode. There is a [pull request](https://github.com/drupalcommerce/commerce/pull/595) waiting to be merged into Drupal Commerce that will fix the issue.
 
  - It is not yet possible to create and use credit card aliases with off-site e-Commerce gateway, as it is not supported by Drupal Commerce yet. See relevant d.o. issue [Allow offsite payment gateways to create and use payment methods](https://www.drupal.org/node/2838380) for more information.
 
