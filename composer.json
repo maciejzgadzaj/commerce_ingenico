@@ -5,9 +5,9 @@
     "homepage": "http://drupal.org/project/commerce_ingenico",
     "license": "GPL-2.0+",
     "require": {
-        "drupal/commerce": "2.x-dev",
-        "marlon-be/marlon-ogone" : "~3.1.1",
-        "mobiledetect/mobiledetectlib": "^2.8"
+        "drupal/commerce": "~2.0",
+        "marlon-be/marlon-ogone" : "~3.1",
+        "mobiledetect/mobiledetectlib": "~2.8"
     },
     "minimum-stability": "dev"
 }

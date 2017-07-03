@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for Commerce Ingenico.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function commerce_ingenico_requirements($phase) {
+  $requirements = [];
+  if ($phase == 'install') {
+    if (!class_exists('\Ogone\Passphrase')) {
+      $requirements['commerce_ingenico_library'] = [
+        'description' => t('Commerce Ingenico requires the marlon-be/marlon-ogone library.'),
+        'severity' => REQUIREMENT_ERROR,
+      ];
+    }
+  }
+
+  return $requirements;
+}
