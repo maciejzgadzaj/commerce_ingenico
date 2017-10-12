@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
@@ -53,8 +54,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager, TimeInterface $time) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager, $time);
     // We need to define httpClient here for capture/void/refund operations,
     // as it is not passed to off-site plugins constructor.
     $this->httpClient = new Client();
