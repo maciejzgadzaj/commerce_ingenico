@@ -21,8 +21,7 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
 
     /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
     $payment = $this->entity;
-    // The test property is not yet added at this point.
-    $payment->setTest($payment->getPaymentGateway()->getPlugin()->getMode() == 'test');
+
     // Save the payment entity so that we can get its ID and use it for
     // building the 'ORDERID' property for Ingenico. Then, when user returns
     // from the off-site redirect, we will update the same payment.
