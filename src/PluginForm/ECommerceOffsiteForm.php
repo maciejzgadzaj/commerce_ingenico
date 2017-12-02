@@ -21,8 +21,6 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
 
     /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
     $payment = $this->entity;
-    // The test property is not yet added at this point.
-    $payment->setTest($payment->getPaymentGateway()->getPlugin()->getMode() == 'test');
     // Save the payment entity so that we can get its ID and use it for
     // building the 'ORDERID' property for Ingenico. Then, when user returns
     // from the off-site redirect, we will update the same payment.
@@ -88,6 +86,7 @@ class ECommerceOffsiteForm extends BasePaymentOffsiteForm {
     $ecommercePaymentRequest->setEcom_Shipto_Postal_Name_Last($billing_address->getFamilyName());
     $ecommercePaymentRequest->setEcom_Shipto_Postal_Postalcode($billing_address->getPostalCode());
     $ecommercePaymentRequest->setEcom_Shipto_Postal_Street_Line1($billing_address->getAddressLine1());
+    $ecommercePaymentRequest->setTp($payment_gateway_configuration['tp']);
 
     $mobile_detect = new \Mobile_Detect();
     if ($mobile_detect->isMobile()) {

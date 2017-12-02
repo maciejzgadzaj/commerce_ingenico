@@ -4,20 +4,17 @@ namespace Drupal\commerce_ingenico\Plugin\Commerce\PaymentGateway;
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\commerce_ingenico\PluginForm\PaymentRenewAuthorizationForm;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Entity\PaymentInterface;
 use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_payment\Exception\DeclineException;
 use Drupal\commerce_payment\Exception\InvalidResponseException;
 use Drupal\commerce_payment\Exception\HardDeclineException;
-use Drupal\commerce_payment\Exception\InvalidRequestException;
 use Drupal\commerce_payment\PaymentMethodTypeManager;
 use Drupal\commerce_payment\PaymentTypeManager;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OnsitePaymentGatewayBase;
-use Drupal\commerce_price\Price;
 use GuzzleHttp\ClientInterface;
 use Ogone\DirectLink\Alias;
 use Ogone\DirectLink\CreateAliasRequest;
@@ -65,9 +62,9 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager, ClientInterface $client) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager, TimeInterface $time, ClientInterface $client) {
     $this->httpClient = $client;
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager);
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager, $time);
  }
 
   /**
@@ -81,6 +78,7 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       $container->get('entity_type.manager'),
       $container->get('plugin.manager.commerce_payment_type'),
       $container->get('plugin.manager.commerce_payment_method_type'),
+      $container->get('datetime.time'),
       $container->get('http_client')
     );
   }
@@ -232,17 +230,10 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
    * @see https://payment-services.ingenico.com/int/en/ogone/support/guides/integration%20guides/directlink
    */
   public function createPayment(PaymentInterface $payment, $capture = TRUE) {
-    if ($payment->getState()->value != 'new') {
-      throw new \InvalidArgumentException('The provided payment is in an invalid state.');
-    }
+    $this->assertPaymentState($payment, ['new']);
 
     $payment_method = $payment->getPaymentMethod();
-    if (empty($payment_method)) {
-      throw new \InvalidArgumentException('The provided payment has no payment method referenced.');
-    }
-    if (REQUEST_TIME >= $payment_method->getExpiresTime()) {
-      throw new HardDeclineException('The provided payment method has expired');
-    }
+    $this->assertPaymentMethod($payment_method);
 
     $passphrase = new Passphrase($this->configuration['sha_in']);
     $sha_algorithm = new HashAlgorithm($this->configuration['sha_algorithm']);
@@ -392,13 +383,9 @@ class DirectLink extends OnsitePaymentGatewayBase implements DirectLinkInterface
       ]), $directLinkResponse->getParam('NCERROR'));
     }
 
-    $payment->state = $capture ? 'capture_completed' : 'authorization';
+    $payment->state = $capture ? 'completed' : 'authorization';
     $payment->setRemoteId($directLinkResponse->getParam('PAYID'));
     $payment->setRemoteState($directLinkResponse->getParam('STATUS'));
-    $payment->setAuthorizedTime(REQUEST_TIME);
-    if ($capture) {
-      $payment->setCapturedTime(REQUEST_TIME);
-    }
     $payment->save();
   }
 
