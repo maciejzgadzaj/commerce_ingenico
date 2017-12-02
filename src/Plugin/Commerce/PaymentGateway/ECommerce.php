@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Entity\PaymentInterface;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\commerce_payment\Exception\DeclineException;
 use Drupal\commerce_payment\Exception\InvalidResponseException;
 use Drupal\commerce_payment\PaymentMethodTypeManager;
@@ -53,8 +54,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, PaymentTypeManager $payment_type_manager, PaymentMethodTypeManager $payment_method_type_manager, TimeInterface $time) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_type_manager, $payment_type_manager, $payment_method_type_manager, $time);
     // We need to define httpClient here for capture/void/refund operations,
     // as it is not passed to off-site plugins constructor.
     $this->httpClient = new Client();
@@ -110,12 +111,8 @@ class ECommerce extends OffsitePaymentGatewayBase implements EcommerceInterface 
     // Let's also update payment state here - it's safer doing it from received
     // asynchronous notification rather than from the redirect back from the
     // off-site redirect.
-    $state = $request->query->get('STATUS') == PaymentResponse::STATUS_AUTHORISED ? 'authorization' : 'capture_completed';
+    $state = $request->query->get('STATUS') == PaymentResponse::STATUS_AUTHORISED ? 'authorization' : 'completed';
     $payment->set('state', $state);
-    $payment->setAuthorizedTime(REQUEST_TIME);
-    if ($request->query->get('STATUS') != PaymentResponse::STATUS_AUTHORISED) {
-      $payment->setCapturedTime(REQUEST_TIME);
-    }
     $payment->save();
   }
 

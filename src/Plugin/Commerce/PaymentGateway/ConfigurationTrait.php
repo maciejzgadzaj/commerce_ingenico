@@ -21,6 +21,7 @@ trait ConfigurationTrait {
       'sha_algorithm' => HashAlgorithm::HASH_SHA512,
       'sha_in' => '',
       'sha_out' => '',
+      'tp' => '',
       'language' => 'en_US',
       'api_logging' => [
         'request' => 'request',
@@ -96,6 +97,13 @@ trait ConfigurationTrait {
       '#description' => $this->t('The SHA-OUT Pass phrase as entered in Ingenico technical settings - "Transaction feedback" tab.'),
       '#default_value' => $this->configuration['sha_out'],
       '#required' => TRUE,
+    ];
+
+    $form['tp'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Template URL'),
+      '#description' => $this->t('The full URL of the Template Page hosted on the merchant\'s site and containing the "payment string"'),
+      '#default_value' => $this->configuration['tp'],
     ];
 
     $shaComposer = new AllParametersShaComposer(new Passphrase(''));
@@ -215,6 +223,7 @@ trait ConfigurationTrait {
       $this->configuration['sha_algorithm'] = $values['sha_algorithm'];
       $this->configuration['sha_in'] = $values['sha_in'];
       $this->configuration['sha_out'] = $values['sha_out'];
+      $this->configuration['tp'] = $values['tp'];
       $this->configuration['language'] = $values['language'];
       $this->configuration['api_logging'] = $values['api_logging'];
       if (isset($values['3ds'])) {
